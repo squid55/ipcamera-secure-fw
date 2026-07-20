@@ -17,7 +17,8 @@ async function walk(dir, acc = []) {
     if (e.name === 'node_modules' || e.name === '.git') continue;
     const p = join(dir, e.name);
     if (e.isDirectory()) await walk(p, acc);
-    else if (/\.(c|h|mk|sh|conf|rules|txt|cfg|in|md|js|mjs)$/.test(e.name)) acc.push(p);
+    // 텍스트 소스/설정/스크립트 + 확장자 없는 스크립트(S65rtsp-server, fwinfo 등)
+    else if (/\.(c|h|mk|sh|conf|rules|txt|cfg|in|md|js|mjs|ya?ml)$/.test(e.name) || !e.name.includes('.')) acc.push(p);
   }
   return acc;
 }
