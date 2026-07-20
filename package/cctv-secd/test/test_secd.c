@@ -1,6 +1,9 @@
 /* cctv-secd 로직 호스트 테스트 (auth + audit) */
 #include "auth.h"
 #include "audit.h"
+#include "session.h"
+#include "mgmt.h"
+#include "config_store.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -41,6 +44,43 @@ int main(void) {
 	printf("[감사] 위변조 탐지\n");
 	audit_test_tamper(1, "policy changed key=DISABLED_AUDIT");  /* 중간 레코드 변조 */
 	CHECK(!audit_verify(), "변조 시 체인 검증 실패(탐지)");
+
+	printf("[감사] 조회 필터·정렬 + 용량 회전 (SFR:8.2.1/8.2.2/8.4.1)\n");
+	audit_init();
+	audit_append("login user=admin");
+	audit_append("policy change");
+	audit_append("login user=bob");
+	size_t idx[8];
+	CHECK(audit_query("login", 1, idx, 8) == 2, "substr 'login' 2건 매칭");
+	CHECK(audit_query(NULL, 0, idx, 8) == 3 && idx[0] == 2, "내림차순 정렬(최신 먼저)");
+	CHECK(audit_capacity_guard(3) == 1 && audit_count() == 0, "용량 도달 시 회전");
+
+	printf("[세션] 미사용 종료 + 중복접속 거부 (SFR:7.1.1/7.2.1)\n");
+	session_init();
+	CHECK(session_open("admin", "sidA", 1000) == SESSION_OK, "세션 개설");
+	CHECK(session_open("admin", "sidB", 1001) == SESSION_DUP, "동일 계정 중복 거부");
+	CHECK(session_touch("sidA", 1500) == SESSION_OK, "활동 갱신");
+	CHECK(session_reap(1600, 300) == 0, "idle 미초과 유지");
+	CHECK(session_reap(2000, 300) == 1 && session_count() == 0, "idle 초과 종료");
+
+	printf("[관리] RBAC + 서비스 토글 (SFR:3.1.1/3.2.1)\n");
+	mgmt_init();
+	mgmt_set_role("admin", ROLE_ADMIN);
+	mgmt_set_role("viewer", ROLE_VIEWER);
+	CHECK(mgmt_can_manage("admin") && !mgmt_can_manage("viewer"), "ADMIN만 관리 가능");
+	CHECK(!mgmt_service_set("viewer", SVC_WEB, false), "비인가자 토글 거부");
+	CHECK(mgmt_service_set("admin", SVC_ONVIF, true) && mgmt_service_enabled(SVC_ONVIF), "ADMIN 토글 반영");
+
+	printf("[설정] 암호화 저장 + 접근제어 + 무결성 (SFR:4.2.2/5.2.1)\n");
+	config_store_init();
+	const uint8_t cfg[] = "retention=30d; ip_allow=10.0.0.0/24";
+	CHECK(config_set("viewer", cfg, sizeof(cfg)) == CFG_DENIED, "비인가자 저장 거부");
+	CHECK(config_set("admin", cfg, sizeof(cfg)) == CFG_OK, "ADMIN 암호화 저장");
+	uint8_t rd[512]; size_t rl = sizeof(rd);
+	CHECK(config_get("admin", rd, &rl) == CFG_OK && memcmp(rd, cfg, sizeof(cfg)) == 0, "복호화 일치");
+	config_test_tamper();
+	rl = sizeof(rd);
+	CHECK(config_get("admin", rd, &rl) == CFG_TAMPER, "변조된 설정 무결성 실패 탐지");
 
 	printf("\n%s (실패 %d)\n", fails ? "❌ 테스트 실패" : "✅ 전체 통과", fails);
 	return fails ? 1 : 0;

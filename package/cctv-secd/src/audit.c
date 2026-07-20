@@ -71,6 +71,28 @@ bool audit_verify(void) {
 
 size_t audit_count(void) { return n_rec; }
 
+/* SFR:8.2.1/8.2.2 substr 필터 + seq 정렬 조회 */
+size_t audit_query(const char *substr, int ascending, size_t *idx_out, size_t max) {
+	size_t m = 0;
+	for (size_t i = 0; i < n_rec; i++) {
+		size_t idx = ascending ? i : (n_rec - 1 - i);   /* 레코드는 seq 순 저장 */
+		if (substr && substr[0] && !strstr(log[idx].event, substr)) continue;
+		if (idx_out && m < max) idx_out[m] = idx;
+		m++;
+	}
+	return m;
+}
+
+/* SFR:8.4.1/8.5.1 용량 도달 시 아카이브(외부 전송 가정) 후 체인 회전 */
+int audit_capacity_guard(size_t high_water) {
+	if (n_rec >= high_water) {
+		/* 실제: 현재 세그먼트를 무결성 검증 후 외부 로그서버로 전송·아카이브 */
+		audit_init();     /* 새 제네시스로 회전 */
+		return 1;
+	}
+	return 0;
+}
+
 void audit_test_tamper(size_t idx, const char *new_event) {
 	if (idx < n_rec) { strncpy(log[idx].event, new_event, EVENT_MAX - 1); log[idx].event[EVENT_MAX-1]='\0'; }
 }

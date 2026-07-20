@@ -9,17 +9,19 @@ SD=package/cctv-secd
 CFLAGS="-Wall -Wextra -I $CH/include -I $SD/src"
 OUT=$(mktemp -d)
 
+SECD_SRC="$SD/src/main.c $SD/src/auth.c $SD/src/audit.c $SD/src/session.c $SD/src/mgmt.c $SD/src/config_store.c"
+LIB_SRC="$SD/src/auth.c $SD/src/audit.c $SD/src/session.c $SD/src/mgmt.c $SD/src/config_store.c"
+
 echo "== 데몬 전체 컴파일 확인 =="
-gcc $CFLAGS $SD/src/main.c $SD/src/auth.c $SD/src/audit.c \
-	$CH/src/crypto_hal_openssl.c -lcrypto -o "$OUT/cctv-secd"
+gcc $CFLAGS $SECD_SRC $CH/src/crypto_hal_openssl.c -lcrypto -o "$OUT/cctv-secd"
 echo "  ok: cctv-secd 링크 성공"
 
 echo "== crypto_hal 테스트 =="
 gcc $CFLAGS $CH/test/test_crypto.c $CH/src/crypto_hal_openssl.c -lcrypto -o "$OUT/test_crypto"
 "$OUT/test_crypto"
 
-echo "== auth + audit 테스트 =="
-gcc $CFLAGS $SD/test/test_secd.c $SD/src/auth.c $SD/src/audit.c \
+echo "== auth·audit·session·mgmt·config 테스트 =="
+gcc $CFLAGS $SD/test/test_secd.c $LIB_SRC \
 	$CH/src/crypto_hal_openssl.c -lcrypto -o "$OUT/test_secd"
 "$OUT/test_secd"
 
