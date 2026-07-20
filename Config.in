@@ -1,4 +1,5 @@
 menu "CCTV Secure Firmware (국정원 보안기능확인서 대응)"
 	source "$BR2_EXTERNAL_IPCAMERA_SECURE_PATH/package/cctv-secd/Config.in"
 	source "$BR2_EXTERNAL_IPCAMERA_SECURE_PATH/package/crypto-hal/Config.in"
+	source "$BR2_EXTERNAL_IPCAMERA_SECURE_PATH/package/rtsp-server/Config.in"
 endmenu

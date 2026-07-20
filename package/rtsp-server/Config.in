@@ -1,0 +1,7 @@
+config BR2_PACKAGE_RTSP_SERVER
+	bool "rtsp-server (mediamtx, 인증 + RTSPS)"
+	help
+	  IMX219 영상 스트리밍용 RTSP 서버(mediamtx).
+	  익명 접근을 막는 사용자 인증(SFR:1.1.1)과 RTSPS(RTSP over TLS)
+	  암호전송(SFR:1.2.1)을 강제하는 하드닝 설정으로 배포한다.
+	  RPi5는 HW H.264 인코더가 없어 소프트웨어 인코딩(libcamera→gstreamer)을 사용.

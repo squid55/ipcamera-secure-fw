@@ -39,7 +39,8 @@ BR2_PACKAGE_GSTREAMER1=y
 BR2_PACKAGE_GST1_PLUGINS_GOOD=y
 BR2_PACKAGE_GST1_PLUGINS_BAD=y
 BR2_PACKAGE_GST1_LIBAV=y
-# RTSP 서버(1.1.1 인증 + 1.2.1 RTSPS): mediamtx 또는 gst-rtsp-server (커스텀 패키지 후보)
+# RTSP 서버(1.1.1 인증 + 1.2.1 RTSPS): mediamtx (package/rtsp-server)
+BR2_PACKAGE_GST1_PLUGINS_UGLY=y   # x264enc (소프트 H.264)
 
 # --- 웹 관리 UI (경량, 비-WAS) ---
 BR2_PACKAGE_LIGHTTPD=y
@@ -65,9 +66,10 @@ BR2_PACKAGE_HOST_GENIMAGE=y
 BR2_PACKAGE_HOST_DOSFSTOOLS=y
 BR2_PACKAGE_HOST_MTOOLS=y
 
-# --- 커스텀: 보안 데몬 ---
+# --- 커스텀: 보안 데몬 · RTSP 서버 ---
 BR2_PACKAGE_CCTV_SECD=y
 BR2_PACKAGE_CRYPTO_HAL=y
+BR2_PACKAGE_RTSP_SERVER=y
 
 # --- rootfs 오버레이(하드닝 설정) + post 스크립트 ---
 BR2_ROOTFS_OVERLAY="$(BR2_EXTERNAL_IPCAMERA_SECURE_PATH)/board/rpi5-secure/rootfs-overlay"
