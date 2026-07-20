@@ -121,7 +121,21 @@ make
 sudo dd if=output/images/sdcard.img of=/dev/sdX bs=4M conv=fsync status=progress
 ```
 
-> 아직 뼈대 단계라 `defconfig`의 커널 pin, RTSP 서버 패키지, dm-verity 서명 등은 `TODO`로 표시돼 있습니다.
+> `defconfig`의 커널 pin, dm-verity 서명 등 하드웨어·빌드 종속 부분은 `TODO`로 표시돼 있습니다.
+
+## 호스트 테스트 (보안 로직 검증)
+
+플랫폼 독립 보안 로직(암호 HAL·인증·감사)은 Buildroot·하드웨어 없이 **호스트에서 gcc로 빌드·검증**할 수 있습니다.
+
+```bash
+sudo apt install -y libssl-dev   # 최초 1회
+./run-host-tests.sh
+```
+
+검증 항목:
+- **crypto_hal**: ARIA-256-GCM 라운드트립, 변조 탐지, nonce 유일성(고정 IV 재사용 없음), HMAC, 키 파기
+- **auth**: 패스워드 정책(2.3.1)·재사용 방지(2.4.1)·연속 실패 잠금(2.2.1)
+- **audit**: append-only HMAC 해시체인 무결성 + 위변조 탐지(8.3.1)
 
 ## 구현명세서 동기화 (핵심 워크플로)
 
