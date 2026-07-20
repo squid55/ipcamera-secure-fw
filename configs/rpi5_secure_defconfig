@@ -15,8 +15,9 @@ BR2_LINUX_KERNEL=y
 BR2_LINUX_KERNEL_CUSTOM_TARBALL=y
 # BR2_LINUX_KERNEL_CUSTOM_TARBALL_LOCATION="<RPi 커널 pin>"  # TODO: 버전 고정(재현성)
 BR2_LINUX_KERNEL_DEFCONFIG="bcm2712"
-# 모듈 서명(5.2.2 커널 무결성)
+# SFR:5.2.2 커널/커널모듈 무결성: 모듈 서명 + lockdown (kernel fragment)
 BR2_LINUX_KERNEL_NEEDS_HOST_OPENSSL=y
+# CONFIG_MODULE_SIG_FORCE / CONFIG_SECURITY_LOCKDOWN_LSM 은 커널 config fragment 로 강제
 
 # --- 부트 (RPi5 펌웨어 + U-Boot FIT 서명) ---
 BR2_PACKAGE_RPI_FIRMWARE=y
