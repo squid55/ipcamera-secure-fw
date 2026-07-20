@@ -1,0 +1,50 @@
+# ipcamera-secure-fw — raspberrypi5_defconfig 위에 병합하는 보안/최소화 오버레이 fragment
+# scripts/setup.sh 가 raspberrypi5_defconfig 로드 후 이 파일을 .config 에 병합한다.
+# (베이스 defconfig 의 아키텍처·커널·부트는 그대로 두고, 우리 것만 추가/오버라이드)
+
+# --- 읽기전용 rootfs (dm-verity 대상) ---
+BR2_TARGET_ROOTFS_SQUASHFS=y
+BR2_TARGET_ROOTFS_SQUASHFS4_XZ=y
+
+# --- 카메라(IMX219) + 소프트웨어 H.264 인코딩(RPi5는 HW 인코더 없음) ---
+BR2_PACKAGE_LIBCAMERA=y
+BR2_PACKAGE_LIBCAMERA_APPS=y
+BR2_PACKAGE_GSTREAMER1=y
+BR2_PACKAGE_GST1_PLUGINS_GOOD=y
+BR2_PACKAGE_GST1_PLUGINS_BAD=y
+BR2_PACKAGE_GST1_PLUGINS_UGLY=y
+BR2_PACKAGE_GST1_LIBAV=y
+
+# --- 웹UI / 암호 / 네트워크 하드닝 ---
+BR2_PACKAGE_LIGHTTPD=y
+BR2_PACKAGE_LIGHTTPD_OPENSSL=y
+BR2_PACKAGE_OPENSSL=y
+BR2_PACKAGE_NFTABLES=y
+BR2_PACKAGE_CHRONY=y
+BR2_PACKAGE_OPENSSH=y
+
+# --- 저장 암호화/무결성 + 서명 A/B 업데이트 ---
+BR2_PACKAGE_CRYPTSETUP=y
+BR2_PACKAGE_RAUC=y
+
+# --- 이미지 생성 도구(호스트) ---
+BR2_PACKAGE_HOST_GENIMAGE=y
+BR2_PACKAGE_HOST_DOSFSTOOLS=y
+BR2_PACKAGE_HOST_MTOOLS=y
+
+# --- 커스텀 보안 패키지 ---
+BR2_PACKAGE_CCTV_SECD=y
+BR2_PACKAGE_CRYPTO_HAL=y
+BR2_PACKAGE_RTSP_SERVER=y
+
+# --- SFR:5.2.2 커널 모듈 서명/lockdown (커널 config fragment) ---
+BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES="$(BR2_EXTERNAL_IPCAMERA_SECURE_PATH)/board/rpi5-secure/linux.fragment"
+
+# --- rootfs 오버레이(하드닝 설정) + post-build(서비스 제거) ---
+BR2_ROOTFS_OVERLAY="$(BR2_EXTERNAL_IPCAMERA_SECURE_PATH)/board/rpi5-secure/rootfs-overlay"
+BR2_ROOTFS_POST_BUILD_SCRIPT="$(BR2_EXTERNAL_IPCAMERA_SECURE_PATH)/board/rpi5-secure/post-build.sh"
+
+# --- (옵트인) A/B + dm-verity 이미지 조립 ---
+# 아래를 활성화하면 우리 genimage.cfg(A/B)로 sdcard.img 를 만든다. 단 RPi5 부트 레이아웃과
+# 맞추는 조정이 필요할 수 있어(부트로더·DTB·roothash cmdline) BUILD.md 참고 후 켤 것.
+# BR2_ROOTFS_POST_IMAGE_SCRIPT="$(BR2_EXTERNAL_IPCAMERA_SECURE_PATH)/board/rpi5-secure/post-image.sh"

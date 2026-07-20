@@ -1,0 +1,15 @@
+# 커널 config fragment — SFR:5.2.2 커널/모듈 무결성
+# 모듈 서명 강제 + 커널 lockdown + dm-verity(무결성 검증) 지원
+CONFIG_MODULE_SIG=y
+CONFIG_MODULE_SIG_FORCE=y
+CONFIG_MODULE_SIG_ALL=y
+CONFIG_MODULE_SIG_SHA512=y
+CONFIG_SECURITY=y
+CONFIG_SECURITY_LOCKDOWN_LSM=y
+CONFIG_SECURITY_LOCKDOWN_LSM_EARLY=y
+# dm-verity (읽기전용 rootfs 무결성, SFR:5.2.1)
+CONFIG_MD=y
+CONFIG_BLK_DEV_DM=y
+CONFIG_DM_VERITY=y
+# 저장 암호화(config/data LUKS, SFR:4.2.1)
+CONFIG_DM_CRYPT=y

@@ -101,27 +101,23 @@ ipcamera-secure-fw/
 
 ## 빌드 방법
 
-> Buildroot는 이 저장소에 포함돼 있지 않습니다. 별도로 받아 **외부 트리로 지정**해서 빌드합니다.
+Buildroot는 이 저장소에 포함돼 있지 않습니다. `raspberrypi5_defconfig` 위에 우리 보안 설정을 병합해서 빌드합니다. **셋업 스크립트가 자동화**합니다:
 
 ```bash
-# 1. Buildroot 체크아웃 (재현성 위해 태그/커밋 고정 권장)
-git clone https://gitlab.com/buildroot.org/buildroot.git
-cd buildroot
-
-# 2. 외부 트리 지정 + defconfig 적용
-make BR2_EXTERNAL=/path/to/ipcamera-secure-fw rpi5_secure_defconfig
-
-# 3. 빌드 → output/images/sdcard.img (A/B)
-make
+./scripts/gen-dev-keys.sh          # (서명 업데이트용) 개발 키 생성
+./scripts/setup.sh                 # buildroot 고정 + raspberrypi5_defconfig + 보안 fragment 병합
+make -C buildroot BR2_EXTERNAL=$PWD # → buildroot/output/images/
 ```
 
-빌드가 끝나면 `output/images/sdcard.img` 를 SD카드에 구우면 됩니다.
+SD카드(16GB)에 굽기:
 
 ```bash
-sudo dd if=output/images/sdcard.img of=/dev/sdX bs=4M conv=fsync status=progress
+lsblk                              # SD 장치 확인 (예: /dev/sdX) — 반드시 재확인!
+sudo dd if=buildroot/output/images/sdcard.img of=/dev/sdX bs=4M conv=fsync status=progress
 ```
 
-> `defconfig`의 커널 pin, dm-verity 서명 등 하드웨어·빌드 종속 부분은 `TODO`로 표시돼 있습니다.
+> 상세 절차·A/B+dm-verity 옵트인·하드웨어 조정은 **[BUILD.md](BUILD.md)** 참고.
+> 우리 보안 SW·하드닝은 병합만으로 이미지에 포함됩니다. A/B·서명부팅 등 부트 통합은 온보드 조정이 필요합니다.
 
 ## 호스트 테스트 (보안 로직 검증)
 

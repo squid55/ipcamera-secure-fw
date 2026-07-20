@@ -1,7 +1,12 @@
-# Buildroot 빌드 산출물 (외부 트리엔 생성되지 않지만 방어적으로)
+# Buildroot 체크아웃·산출물
+buildroot/
 output/
 *.img
 *.squashfs
+
+# 개발 서명 키(개인키 미커밋) + 생성된 keyring
+keys/
+board/rpi5-secure/rootfs-overlay/etc/rauc/keyring.pem
 
 # Node
 node_modules/

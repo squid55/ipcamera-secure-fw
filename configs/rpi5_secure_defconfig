@@ -1,6 +1,7 @@
+# [참고용 단독 스케치] — 권장 경로는 scripts/setup.sh (raspberrypi5_defconfig + fragment 병합).
+# 이 파일은 옵션을 한눈에 보기 위한 참고본이며, 실제 빌드는 configs/ipcamera_secure.fragment
+# 를 raspberrypi5_defconfig 에 병합하는 방식을 쓴다(BUILD.md 참고). 커널 pin 등은 미검증.
 # RPi5(2GB)+IMX219 보안 IP카메라 펌웨어 defconfig (뼈대)
-# 사용: buildroot$ make BR2_EXTERNAL=../cctv-secure-fw rpi5_secure_defconfig && make
-# 기반: raspberrypi5_defconfig 에 보안/최소화 옵션 오버레이. 실제 옵션명은 Buildroot 버전에 맞춰 확인.
 
 # --- 아키텍처 (RPi5 = BCM2712, Cortex-A76) ---
 BR2_aarch64=y
