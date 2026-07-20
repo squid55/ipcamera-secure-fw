@@ -1,0 +1,6 @@
+# RPi5 부트 설정 — IMX219 카메라
+camera_auto_detect=0
+dtoverlay=imx219
+# HW H.264 인코더 없음(RPi5) → 소프트웨어 인코딩. GPU 메모리 최소.
+gpu_mem=64
+disable_splash=1

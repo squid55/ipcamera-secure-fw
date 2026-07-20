@@ -1,0 +1,78 @@
+# RPi5(2GB)+IMX219 보안 IP카메라 펌웨어 defconfig (뼈대)
+# 사용: buildroot$ make BR2_EXTERNAL=../cctv-secure-fw rpi5_secure_defconfig && make
+# 기반: raspberrypi5_defconfig 에 보안/최소화 옵션 오버레이. 실제 옵션명은 Buildroot 버전에 맞춰 확인.
+
+# --- 아키텍처 (RPi5 = BCM2712, Cortex-A76) ---
+BR2_aarch64=y
+BR2_cortex_a76=y
+
+# --- 툴체인 ---
+BR2_TOOLCHAIN_BUILDROOT_GLIBC=y
+BR2_TOOLCHAIN_BUILDROOT_CXX=y
+
+# --- 커널 (RPi 다운스트림: 카메라/IMX219 지원) ---
+BR2_LINUX_KERNEL=y
+BR2_LINUX_KERNEL_CUSTOM_TARBALL=y
+# BR2_LINUX_KERNEL_CUSTOM_TARBALL_LOCATION="<RPi 커널 pin>"  # TODO: 버전 고정(재현성)
+BR2_LINUX_KERNEL_DEFCONFIG="bcm2712"
+# 모듈 서명(5.2.2 커널 무결성)
+BR2_LINUX_KERNEL_NEEDS_HOST_OPENSSL=y
+
+# --- 부트 (RPi5 펌웨어 + U-Boot FIT 서명) ---
+BR2_PACKAGE_RPI_FIRMWARE=y
+BR2_TARGET_UBOOT=y
+# BR2_TARGET_UBOOT_NEEDS_OPENSSL=y  # FIT 서명
+
+# --- rootfs: 읽기전용 squashfs + dm-verity (5.2.1 무결성) ---
+BR2_TARGET_ROOTFS_SQUASHFS=y
+BR2_TARGET_ROOTFS_SQUASHFS4_XZ=y
+# ext4 등 쓰기 rootfs 비활성 (불변)
+# dm-verity 해시는 post-image 에서 veritysetup 로 생성
+
+# --- 카메라 (IMX219) ---
+BR2_PACKAGE_LIBCAMERA=y
+BR2_PACKAGE_LIBCAMERA_APPS=y
+# IMX219 device-tree overlay 는 rpi-firmware config.txt (rootfs-overlay)
+
+# --- 영상 스트리밍 (RPi5 HW H.264 인코더 없음 → 소프트 인코딩) ---
+BR2_PACKAGE_GSTREAMER1=y
+BR2_PACKAGE_GST1_PLUGINS_GOOD=y
+BR2_PACKAGE_GST1_PLUGINS_BAD=y
+BR2_PACKAGE_GST1_LIBAV=y
+# RTSP 서버(1.1.1 인증 + 1.2.1 RTSPS): mediamtx 또는 gst-rtsp-server (커스텀 패키지 후보)
+
+# --- 웹 관리 UI (경량, 비-WAS) ---
+BR2_PACKAGE_LIGHTTPD=y
+BR2_PACKAGE_LIGHTTPD_OPENSSL=y
+
+# --- 암호 (crypto HAL 백엔드: 프로토타입 OpenSSL/ARIA) ---
+BR2_PACKAGE_OPENSSL=y
+BR2_PACKAGE_LIBOPENSSL=y
+
+# --- 네트워크 하드닝 ---
+BR2_PACKAGE_NFTABLES=y
+BR2_PACKAGE_CHRONY=y            # 8.1.3 신뢰 시간(인증 NTP)
+BR2_PACKAGE_OPENSSH=y           # 관리 접속(키기반). telnet/ftp 미포함
+
+# --- 저장 암호화 / 무결성 ---
+BR2_PACKAGE_CRYPTSETUP=y        # 4.2.1 저장 암호화 + dm-verity(veritysetup)
+
+# --- 서명 A/B OTA 업데이트 (6.1.x) ---
+BR2_PACKAGE_RAUC=y
+
+# --- 이미지 생성 (A/B 파티션) ---
+BR2_PACKAGE_HOST_GENIMAGE=y
+BR2_PACKAGE_HOST_DOSFSTOOLS=y
+BR2_PACKAGE_HOST_MTOOLS=y
+
+# --- 커스텀: 보안 데몬 ---
+BR2_PACKAGE_CCTV_SECD=y
+BR2_PACKAGE_CRYPTO_HAL=y
+
+# --- rootfs 오버레이(하드닝 설정) + post 스크립트 ---
+BR2_ROOTFS_OVERLAY="$(BR2_EXTERNAL_IPCAMERA_SECURE_PATH)/board/rpi5-secure/rootfs-overlay"
+BR2_ROOTFS_POST_BUILD_SCRIPT="$(BR2_EXTERNAL_IPCAMERA_SECURE_PATH)/board/rpi5-secure/post-build.sh"
+BR2_ROOTFS_POST_IMAGE_SCRIPT="$(BR2_EXTERNAL_IPCAMERA_SECURE_PATH)/board/rpi5-secure/post-image.sh"
+
+# --- 최소화(10.3.1 불필요 서비스 제거): 아래는 넣지 않음 ---
+# telnet, ftp, avahi/mDNS, python, 개발도구, 불필요 데몬

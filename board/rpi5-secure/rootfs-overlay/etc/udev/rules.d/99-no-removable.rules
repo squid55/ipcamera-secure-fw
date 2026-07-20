@@ -1,0 +1,4 @@
+# 외부 저장매체(USB/추가 SD) 인식 차단 — 요구: SD/USB 인식 불가
+# 부팅 SD(mmcblk0)는 시스템 매체라 예외. 그 외 removable block 자동 마운트 금지.
+SUBSYSTEM=="block", ATTRS{removable}=="1", KERNEL!="mmcblk0*", ENV{UDISKS_IGNORE}="1", OPTIONS+="ignore_device"
+SUBSYSTEM=="usb", ENV{ID_USB_INTERFACE_CLASS}=="08", OPTIONS+="ignore_device"

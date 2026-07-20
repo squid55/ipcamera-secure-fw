@@ -1,0 +1,7 @@
+config BR2_PACKAGE_CRYPTO_HAL
+	bool "crypto-hal (암호 추상화 계층)"
+	select BR2_PACKAGE_OPENSSL
+	help
+	  crypto_provider HAL. 프로토타입=OpenSSL(ARIA256-GCM 1순위) 백엔드,
+	  양산=KCMVP 검증필 모듈로 백엔드만 교체. AEAD/해시/키관리만 노출해
+	  ECB·고정IV·금지 알고리즘을 원천 차단. (SFR:9.1.1~9.4.1, 4.2.1)

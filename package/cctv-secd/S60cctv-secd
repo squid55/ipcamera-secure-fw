@@ -1,0 +1,8 @@
+#!/bin/sh
+# cctv-secd init (BusyBox)
+case "$1" in
+	start)  printf "Starting cctv-secd: "; /usr/sbin/cctv-secd & echo "OK" ;;
+	stop)   printf "Stopping cctv-secd: "; killall cctv-secd 2>/dev/null; echo "OK" ;;
+	restart) "$0" stop; "$0" start ;;
+	*) echo "Usage: $0 {start|stop|restart}"; exit 1 ;;
+esac

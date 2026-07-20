@@ -1,0 +1,13 @@
+# Buildroot 빌드 산출물 (외부 트리엔 생성되지 않지만 방어적으로)
+output/
+*.img
+*.squashfs
+
+# Node
+node_modules/
+npm-debug.log*
+
+# OS / 에디터
+.DS_Store
+*.swp
+*~

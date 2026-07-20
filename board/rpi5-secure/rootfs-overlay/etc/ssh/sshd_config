@@ -1,0 +1,13 @@
+# SSH 하드닝 (관리 접속) — SFR:2.1.1 SFR:4.1.1 SFR:7.1.1
+Protocol 2
+PermitRootLogin no
+PasswordAuthentication no
+PubkeyAuthentication yes
+PermitEmptyPasswords no
+MaxAuthTries 3
+ClientAliveInterval 300
+ClientAliveCountMax 0
+AllowUsers admin
+# 약한 알고리즘 배제 (9.1.1 권고 강도)
+Ciphers aes256-gcm@openssh.com,aes256-ctr
+KexAlgorithms curve25519-sha256

@@ -1,0 +1,8 @@
+config BR2_PACKAGE_CCTV_SECD
+	bool "cctv-secd (보안 데몬)"
+	select BR2_PACKAGE_OPENSSL
+	select BR2_PACKAGE_CRYPTO_HAL
+	help
+	  국정원 보안기능확인서 대응 보안 데몬(PoC).
+	  프로비저닝(firstboot)·자체시험/무결성·감사기록·세션 관리를 담당.
+	  각 기능은 소스에 SFR:<항목ID> 태그로 요구항목과 연결됨.
