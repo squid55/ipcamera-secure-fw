@@ -1,0 +1,10 @@
+#!/bin/sh
+# 제품 유일 식별정보 표시 — SFR:6.1.2
+. /etc/os-release 2>/dev/null
+echo "제품명   : ${PRETTY_NAME:-ipcamera-secure-rpi5}"
+echo "펌웨어   : ${VERSION_ID:-unknown}"
+echo "빌드 해시: $(cat /etc/build-id 2>/dev/null || echo unknown)"
+if command -v rauc >/dev/null 2>&1; then
+	slot=$(rauc status --output-format=shell 2>/dev/null | sed -n 's/^RAUC_SYSTEM_BOOTED_SLOT=//p')
+	echo "활성 슬롯: ${slot:-unknown}"
+fi
