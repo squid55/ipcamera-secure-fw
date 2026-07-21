@@ -16,3 +16,7 @@ npm-debug.log*
 .DS_Store
 *.swp
 *~
+
+# 빌드 로그
+build*.log
+setup.log

@@ -5,6 +5,8 @@
 # --- 읽기전용 rootfs (dm-verity 대상) ---
 BR2_TARGET_ROOTFS_SQUASHFS=y
 BR2_TARGET_ROOTFS_SQUASHFS4_XZ=y
+# 보안 패키지(gstreamer·libcamera·cryptsetup 등) 추가로 rootfs 가 커져 기본 120M 부족 → 512M
+BR2_TARGET_ROOTFS_EXT2_SIZE="512M"
 
 # --- 카메라(IMX219) + 소프트웨어 H.264 인코딩(RPi5는 HW 인코더 없음) ---
 BR2_PACKAGE_LIBCAMERA=y

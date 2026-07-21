@@ -9,8 +9,8 @@ CRYPTO_HAL_INSTALL_STAGING = YES
 CRYPTO_HAL_LICENSE = MIT
 
 define CRYPTO_HAL_BUILD_CMDS
-	$(TARGET_CC) $(TARGET_CFLAGS) -fPIC -shared -o $(@D)/libcrypto_hal.so \
-		$(@D)/crypto_hal_openssl.c -lcrypto
+	$(TARGET_CC) $(TARGET_CFLAGS) -I$(CRYPTO_HAL_PKGDIR)/include -fPIC -shared \
+		-o $(@D)/libcrypto_hal.so $(@D)/crypto_hal_openssl.c -lcrypto
 endef
 
 define CRYPTO_HAL_INSTALL_STAGING_CMDS

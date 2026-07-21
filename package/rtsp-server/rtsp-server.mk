@@ -7,6 +7,8 @@ RTSP_SERVER_SITE = https://github.com/bluenviron/mediamtx/releases/download/v$(R
 RTSP_SERVER_SOURCE = mediamtx_v$(RTSP_SERVER_VERSION)_linux_arm64v8.tar.gz
 RTSP_SERVER_LICENSE = MIT
 RTSP_SERVER_LICENSE_FILES = LICENSE
+# tarball 이 최상위에 파일을 바로 담고 있어(디렉터리 없음) strip 하지 않음
+RTSP_SERVER_STRIP_COMPONENTS = 0
 
 # prebuilt 바이너리 배포판 → 빌드 단계 없음
 define RTSP_SERVER_INSTALL_TARGET_CMDS
