@@ -1,0 +1,24 @@
+# provision.conf — 최초 부팅 프로비저닝 사이드카 (SD boot 파티션 루트에 배치)
+#
+# 사용법:
+#   1) SD 를 이미지로 구운 뒤, boot 파티션 루트에 이 파일을 provision.conf 로 저장
+#   2) 값을 채운다(아래 참고). admin_pw 는 관리 인터페이스 암호(SSH 셸은 키 인증 별도)
+#   3) 카메라 최초 부팅 시 S20provision 이 소비 → 자격/인증서 설정 → 파일 파기(shred)
+#      · 완료 전에는 정상 서비스(RTSPS 영상 등)가 게이트로 차단됨(fail-closed)
+#
+# 형식: key=value (공백/따옴표 없이). '#' 주석 허용.
+
+# [필수] 관리 인터페이스 초기 암호 (SFR:3.4.2)
+#   정책: 9자 이상 + 대문자/소문자/숫자/특수문자 중 3종 이상, 사용자명("admin") 미포함
+admin_pw=CHANGE_ME_Str0ng!
+
+# [선택] 영상(RTSP) viewer 계정 암호. 'generate'=기기가 난수 생성(권장) (SFR:1.1.1)
+viewer_pw=generate
+
+# [선택] TLS 서버 인증서 방식 (SFR:1.2.1)
+#   self-signed = 기기가 자체서명 인증서 자동 생성(기본)
+#   provided    = 운영자 PKI 사용: boot 파티션에 server.crt / server.key 동봉(설치 후 키 파기)
+tls=self-signed
+
+# [선택] 관리자 통보 대상(연속 인증실패 등 알림 주소) (SFR:2.2.2)
+notify=admin@example.org

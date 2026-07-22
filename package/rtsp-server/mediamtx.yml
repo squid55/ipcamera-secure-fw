@@ -8,8 +8,8 @@ logDestinations: [stdout]
 rtsp: yes
 rtspEncryption: strict          # 평문 RTSP 거부, TLS(RTSPS)만 허용
 rtspTransports: [tcp]           # UDP 비활성(전송 보호)
-rtspServerCert: /etc/ssl/rtsp/server.crt   # 프로비저닝이 기기별 발급
-rtspServerKey:  /etc/ssl/rtsp/server.key
+rtspServerCert: /data/tls/server.crt       # 프로비저닝(S20)이 기기별 발급(쓰기가능 파티션)
+rtspServerKey:  /data/tls/server.key
 rtmp: no
 hls: no
 webrtc: no
@@ -19,13 +19,13 @@ srt: no
 authMethod: internal
 authInternalUsers:
   - user: viewer
-    # 비밀번호는 프로비저닝 시 주입(기본값 없음). 여기 자리표시자.
-    pass: __PROVISIONED__
+    # 비밀번호는 프로비저닝(S20) 시 주입 — S65 가 stream.env 로 치환. 기본값 없음.
+    pass: __VIEWER_PW__
     ips: []
     permissions:
       - action: read
   - user: publisher
-    pass: __PROVISIONED__
+    pass: __PUBLISHER_PW__
     permissions:
       - action: publish
 

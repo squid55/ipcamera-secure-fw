@@ -24,6 +24,9 @@ typedef struct ch_key ch_key;   /* 불투명 키 핸들 — 원시 바이트 미
 /* 초기화 + 백엔드 자체시험(KAT). 실패 시 CH_ESELFTEST */
 ch_rc crypto_hal_init(void);
 
+/* SFR:9.2.1 안전 난수(CSPRNG/DRBG). salt·임시 PW·nonce 생성용. 프로토타입=OpenSSL RAND, 양산=KCMVP DRBG */
+ch_rc crypto_hal_random(uint8_t *out, size_t len);
+
 /* SFR:9.2.1 키 생성(안전 난수)  SFR:9.3.1 저장(핸들)  SFR:9.4.1 파기(덮어쓰기) */
 ch_rc crypto_hal_key_generate(size_t bits, ch_key **out);
 ch_rc crypto_hal_key_import(const uint8_t *raw, size_t len, ch_key **out);

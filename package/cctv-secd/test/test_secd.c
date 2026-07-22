@@ -4,6 +4,7 @@
 #include "session.h"
 #include "mgmt.h"
 #include "config_store.h"
+#include "provision.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -87,6 +88,21 @@ int main(void) {
 	config_test_tamper();
 	rl = sizeof(rd);
 	CHECK(config_get("admin", rd, &rl) == CFG_TAMPER, "변조된 설정 무결성 실패 탐지");
+
+	printf("[프로비저닝] 관리 자격증명 강제설정·검증 (SFR:3.4.1/3.4.2)\n");
+	const char *credp = "/tmp/.cctv_test_mgmt_cred";
+	remove(credp);
+	CHECK(provision_set_mgmt_cred("operator", "weak", credp) == PV_POLICY, "약한 PW 거부(기본값 존치 차단)");
+	CHECK(provision_set_mgmt_cred("operator", "operatorX9!", credp) == PV_POLICY, "사용자명 포함 PW 거부");
+	CHECK(provision_set_mgmt_cred("operator", "Str0ng!Cred9", credp) == PV_OK, "강한 관리 PW 설정");
+	CHECK(provision_verify_mgmt_cred("operator", "Str0ng!Cred9", credp) == PV_OK, "정확한 PW 검증 통과");
+	CHECK(provision_verify_mgmt_cred("operator", "WrongPass!9", credp) == PV_MISMATCH, "틀린 PW 거부");
+	CHECK(provision_verify_mgmt_cred("intruder", "Str0ng!Cred9", credp) == PV_MISMATCH, "다른 사용자 거부");
+	CHECK(provision_verify_mgmt_cred("operator", "Str0ng!Cred9", "/tmp/.no_such_cred") == PV_IO, "미프로비저닝 시 IO 실패(fail-closed)");
+	char pw1[64], pw2[64];
+	CHECK(provision_gen_password(pw1, sizeof(pw1)) == PV_OK && strlen(pw1) == 24, "임시 PW 생성(24hex)");
+	CHECK(provision_gen_password(pw2, sizeof(pw2)) == PV_OK && strcmp(pw1, pw2) != 0, "매번 다른 난수 PW");
+	remove(credp);
 
 	printf("\n%s (실패 %d)\n", fails ? "❌ 테스트 실패" : "✅ 전체 통과", fails);
 	return fails ? 1 : 0;
