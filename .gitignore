@@ -20,3 +20,6 @@ npm-debug.log*
 # 빌드 로그
 build*.log
 setup.log
+
+# 헤드리스 접속용 개인 SSH 공개키(로컬 빌드시 주입)
+board/rpi5-secure/rootfs-overlay/home/admin/.ssh/authorized_keys

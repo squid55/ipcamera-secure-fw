@@ -1,0 +1,2 @@
+# <username> <uid> <group> <gid> <password> <home> <shell> <groups> <comment>
+admin -1 admin -1 * /home/admin /bin/sh - Administrator
