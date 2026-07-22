@@ -22,6 +22,7 @@ static bool user_active(const char *user) {
 
 session_rc session_open(const char *user, const char *sid, uint64_t now) {
 	if (!user || !sid) return SESSION_NOTFOUND;
+	if (by_sid(sid)) return SESSION_DUP;                /* sid 중복 차단(세션 혼동/탈취 방지) */
 	if (user_active(user)) return SESSION_DUP;          /* SFR:7.2.1 */
 	for (int i = 0; i < MAX_SESSIONS; i++)
 		if (!tbl[i].active) {
@@ -53,7 +54,8 @@ void session_close(const char *sid) {
 int session_reap(uint64_t now, uint64_t idle_timeout) {
 	int closed = 0;
 	for (int i = 0; i < MAX_SESSIONS; i++)
-		if (tbl[i].active && now - tbl[i].last > idle_timeout) {  /* SFR:7.1.1 */
+		/* now >= last 가드: 벽시계 역행 시 부호없는 언더플로로 오종료되는 것 방지 */
+		if (tbl[i].active && now >= tbl[i].last && now - tbl[i].last > idle_timeout) {  /* SFR:7.1.1 */
 			memset(&tbl[i], 0, sizeof(tbl[i]));
 			closed++;
 		}

@@ -21,7 +21,8 @@ gcc $CFLAGS $CH/test/test_crypto.c $CH/src/crypto_hal_openssl.c -lcrypto -o "$OU
 "$OUT/test_crypto"
 
 echo "== auth·audit·session·mgmt·config 테스트 =="
-gcc $CFLAGS $SD/test/test_secd.c $LIB_SRC \
+# -DAUDIT_TEST: 테스트 빌드에서만 audit_test_tamper 노출(양산 데몬엔 미포함)
+gcc $CFLAGS -DAUDIT_TEST $SD/test/test_secd.c $LIB_SRC \
 	$CH/src/crypto_hal_openssl.c -lcrypto -o "$OUT/test_secd"
 "$OUT/test_secd"
 

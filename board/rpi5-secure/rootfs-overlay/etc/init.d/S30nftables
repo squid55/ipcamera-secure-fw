@@ -1,0 +1,15 @@
+#!/bin/sh
+# 부팅 시 방화벽 룰셋 로드 (SFR:3.3.1/10.3.1). 로드 실패 시 fail-open 되므로 필수.
+NFT=/usr/sbin/nft
+CONF=/etc/nftables.conf
+case "$1" in
+	start)
+		printf "Loading nftables ruleset: "
+		if [ -x "$NFT" ] && "$NFT" -f "$CONF"; then echo "OK"; else echo "FAIL"; fi
+		;;
+	stop)
+		printf "Flushing nftables ruleset: "; "$NFT" flush ruleset 2>/dev/null; echo "OK"
+		;;
+	restart) "$0" stop; "$0" start ;;
+	*) echo "Usage: $0 {start|stop|restart}"; exit 1 ;;
+esac

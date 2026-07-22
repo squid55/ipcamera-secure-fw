@@ -1,0 +1,11 @@
+auto lo
+iface lo inet loopback
+
+# RPi5 온보드 이더넷은 커널/보드에 따라 eth0 또는 end0(RP1) 로 잡힘 → 둘 다 DHCP 시도
+auto eth0
+iface eth0 inet dhcp
+  wait-delay 15
+
+auto end0
+iface end0 inet dhcp
+  wait-delay 15

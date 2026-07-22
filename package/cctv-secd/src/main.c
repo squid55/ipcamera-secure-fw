@@ -18,18 +18,19 @@
 #define IDLE_TIMEOUT 600u    /* 세션 미사용 종료: 10분 */
 #define AUDIT_HW     3500u   /* 감사기록 용량 임계치 */
 
-/* SFR:3.4.1 기본 계정 강제 변경·사용중지  SFR:3.4.2 기본 PW 강제 변경 */
+/* SFR:3.4.1 [STUB] 기본 계정 강제 변경·사용중지  SFR:3.4.2 [STUB] 기본 PW 강제 변경 */
 static int provision_firstboot(void) {
-	/* TODO: /etc/.factory-state 존재 시 password_set() 강제, 완료 후 플래그 제거 */
+	/* TODO: /etc/.factory-state 존재 시 password_set() 강제, 완료 후 플래그 제거.
+	 *   현재 미구현 — 이 함수가 실제 접속경로(SSH/웹)와 연동돼야 강제 변경이 발효됨. */
 	return 0;
 }
-/* SFR:5.1.1 자체시험  SFR:5.2.1 무결성 검증(dm-verity + 설정 HMAC)  SFR:5.2.3 결과 확인 */
-static int self_test(void) { /* TODO: dm-verity 상태 + config_store 무결성 */ return 0; }
-/* SFR:5.1.2 자체시험 실패 대응  SFR:5.2.4 무결성 실패 대응 */
+/* SFR:5.1.1 [STUB] 자체시험  SFR:5.2.1 [STUB] 무결성 검증(dm-verity+설정HMAC)  SFR:5.2.3 [STUB] 결과 확인 */
+static int self_test(void) { /* TODO: dm-verity 상태 + config_store 무결성 실검증. 현재 항상 0 */ return 0; }
+/* SFR:5.1.2 [STUB] 자체시험 실패 대응  SFR:5.2.4 [STUB] 무결성 실패 대응 */
 static void on_integrity_fail(void) { audit_append("integrity check FAILED"); }
-/* SFR:2.2.2 관리자 연속 실패 즉시 통보 */
-static void notify_admin(const char *msg) { audit_append(msg); /* TODO: 웹UI/외부 push */ }
-/* SFR:1.4.1 관리도구 최초설정 default 한정  SFR:3.4.3 내부/외부 default PW 변경 */
+/* SFR:2.2.2 [STUB] 관리자 연속 실패 즉시 통보(호출부·push 미구현) */
+static void notify_admin(const char *msg) { audit_append(msg); /* TODO: 웹UI 팝업/외부 push */ }
+/* SFR:1.4.1 [STUB] 관리도구 최초설정 default 한정  SFR:3.4.3 [STUB] 내부/외부 default PW 변경 */
 static int provision_gate_default_only(void) { /* TODO: factory-state 확인 후 개방 */ return 0; }
 
 int main(void) {
