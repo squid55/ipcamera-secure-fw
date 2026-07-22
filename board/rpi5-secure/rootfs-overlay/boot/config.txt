@@ -1,6 +1,20 @@
-# RPi5 부트 설정 — IMX219 카메라
+# ipcamera-secure-fw 부트 설정 (RPi5 + IMX219)
+# BR2_PACKAGE_RPI_FIRMWARE_CONFIG_FILE 로 지정되어 부트 파티션 config.txt 가 된다.
+
+kernel=Image
+arm_64bit=1
+
+# RPi5 D0 스테핑 대응: d0 DTB 강제 로드.
+#   구버전 부트로더 EEPROM 이 D0 보드에 C0용 DTB(bcm2712-rpi-5-b.dtb)를 자동선택하면
+#   RP1 핀설정에서 SError 커널 패닉 발생 → d0 DTB 를 명시해 회피(양 DTB 모두 부트 파티션에 존재).
+#   ※ C0 보드에서는 이 줄을 bcm2712-rpi-5-b.dtb 로 바꾸거나 부트로더 EEPROM 을 업데이트할 것.
+device_tree=bcm2712d0-rpi-5-b.dtb
+
+# IMX219 카메라 (자동감지 끄고 명시 오버레이)
 camera_auto_detect=0
 dtoverlay=imx219
+
 # HW H.264 인코더 없음(RPi5) → 소프트웨어 인코딩. GPU 메모리 최소.
 gpu_mem=64
+disable_overscan=1
 disable_splash=1

@@ -42,6 +42,10 @@ BR2_PACKAGE_RTSP_SERVER=y
 # --- SFR:5.2.2 커널 모듈 서명/lockdown (커널 config fragment) ---
 BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES="$(BR2_EXTERNAL_IPCAMERA_SECURE_PATH)/board/rpi5-secure/linux.fragment"
 
+# --- 부트 파티션 config.txt: RPi5 D0 스테핑 대응(d0 DTB 강제) + IMX219 카메라 ---
+#   (기본 board/raspberrypi5/config_5.txt 대신 우리 config.txt 를 부트 파티션에 사용)
+BR2_PACKAGE_RPI_FIRMWARE_CONFIG_FILE="$(BR2_EXTERNAL_IPCAMERA_SECURE_PATH)/board/rpi5-secure/rootfs-overlay/boot/config.txt"
+
 # --- rootfs 오버레이(하드닝 설정) + post-build(서비스 제거) ---
 BR2_ROOTFS_OVERLAY="$(BR2_EXTERNAL_IPCAMERA_SECURE_PATH)/board/rpi5-secure/rootfs-overlay"
 BR2_ROOTFS_POST_BUILD_SCRIPT="$(BR2_EXTERNAL_IPCAMERA_SECURE_PATH)/board/rpi5-secure/post-build.sh"
