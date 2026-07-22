@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 보안 취약점 신고
+    url: https://github.com/squid55/ipcamera-secure-fw/security/advisories/new
+    about: 취약점은 공개 이슈가 아니라 비공개 신고(Private Vulnerability Reporting)로 접수합니다.
