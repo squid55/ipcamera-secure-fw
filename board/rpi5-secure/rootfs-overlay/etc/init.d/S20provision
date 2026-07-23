@@ -4,7 +4,7 @@
 #     · 관리 암호 강제 설정(기본값 미존치)         SFR:3.4.1/3.4.2
 #     · 영상 계정(viewer/publisher) 자격 주입        SFR:1.1.1
 #     · TLS 서버 인증서 마련(자체서명 or 주입)        SFR:1.2.1
-#     · 관리자 통보 대상 기록(전달 채널은 미구현)     SFR:2.2.2 [STUB]
+#     · 관리자 통보 대상 + syslog-TLS 로그서버 설정        SFR:2.2.2
 #   완료 전에는 정상 서비스(RTSPS 등)가 게이트로 차단된다(SFR:1.4.1/3.4.3).
 #   완료 후 provision.conf 를 파기(best-effort)하고 완료 마킹.
 DATA=/data
@@ -40,13 +40,14 @@ start() {
 	fi
 
 	# key=value 파싱(busybox-safe, 화이트리스트 키만)
-	admin_pw=""; viewer_pw="generate"; tls="self-signed"; notify=""
+	admin_pw=""; viewer_pw="generate"; tls="self-signed"; notify=""; syslog=""
 	while IFS='=' read -r k v; do
 		case "$k" in
 			admin_pw)  admin_pw=$v ;;
 			viewer_pw) viewer_pw=$v ;;
 			tls)       tls=$v ;;
 			notify)    notify=$v ;;
+			syslog)    syslog=$v ;;
 			''|\#*)    : ;;
 		esac
 	done < "$SRC"
@@ -100,8 +101,21 @@ start() {
 		fi
 	fi
 
-	# 4) 관리자 통보 대상 기록 (SFR:2.2.2 [STUB] — 전달 채널 미구현)
+	# 4) 관리자 통보 대상 기록 (SFR:2.2.2)
 	[ -n "$notify" ] && printf '%s\n' "$notify" > "$DATA/notify.addr"
+
+	# 4b) syslog-over-TLS off-box 로그 대상 (SFR:8.3.1 off-box 사본 + 2.2.2 통보 전송)
+	if [ -n "$syslog" ]; then
+		sy_host=${syslog%%:*}; sy_port=${syslog##*:}
+		[ "$sy_port" = "$syslog" ] && sy_port=6514
+		{ printf 'host=%s\nport=%s\n' "$sy_host" "$sy_port"; } > "$DATA/logsink.conf"
+		if [ -f "$BOOT/logserver-ca.pem" ]; then
+			cp "$BOOT/logserver-ca.pem" "$DATA/tls/logserver-ca.pem"
+			printf 'ca=%s\n' "$DATA/tls/logserver-ca.pem" >> "$DATA/logsink.conf"
+		else
+			log "syslog CA($BOOT/logserver-ca.pem) 없음 — 서버 인증서 검증 없이 전송(권장하지 않음)"
+		fi
+	fi
 
 	# 5) 완료 마킹 + factory 플래그 제거 + 사이드카 파기
 	touch "$DONE"
