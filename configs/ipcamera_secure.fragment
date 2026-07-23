@@ -19,6 +19,13 @@ BR2_PACKAGE_GST1_LIBAV=y
 # H.264 소프트웨어 인코더(RPi5는 HW 인코더 없음) — 카메라 영상 발행에 필요(x264enc 요소)
 BR2_PACKAGE_X264=y
 BR2_PACKAGE_GST1_PLUGINS_UGLY_PLUGIN_X264=y
+# H.264 RTSP 발행 파이프라인용 gst 요소:
+#   libcamerasrc → videoconvert → x264enc → h264parse → rtspclientsink(RTP payload)
+BR2_PACKAGE_GST1_PLUGINS_BAD_PLUGIN_VIDEOPARSERS=y   # h264parse
+BR2_PACKAGE_GST1_PLUGINS_GOOD_PLUGIN_RTP=y           # rtph264pay
+BR2_PACKAGE_GST1_PLUGINS_GOOD_PLUGIN_RTPMANAGER=y    # rtpbin/session
+BR2_PACKAGE_GST1_PLUGINS_GOOD_PLUGIN_UDP=y           # udp(RTP 전송)
+BR2_PACKAGE_GST1_RTSP_SERVER=y                       # rtspclientsink
 
 # --- 웹UI / 암호 / 네트워크 하드닝 ---
 BR2_PACKAGE_LIGHTTPD=y

@@ -68,8 +68,10 @@ start() {
 	mkdir -p "$TLSDIR"
 	if [ "$tls" = "self-signed" ]; then
 		if [ ! -f "$TLSDIR/server.crt" ]; then
+			# 유효기간을 길게(-days 36500): 프로비저닝 시점 시계가 epoch(1970)일 수 있어
+			# 짧으면 즉시 만료됨. 근본해결은 RTC/NTP 시각동기(SFR:8.1.3 후속).
 			log "기기 자체서명 인증서 생성"
-			if ! openssl req -x509 -newkey rsa:2048 -sha256 -days 825 -nodes \
+			if ! openssl req -x509 -newkey rsa:2048 -sha256 -days 36500 -nodes \
 				-keyout "$TLSDIR/server.key" -out "$TLSDIR/server.crt" \
 				-subj "/CN=ipcam" 2>/tmp/prov_ssl.err; then
 				log "인증서 생성 실패: $(head -1 /tmp/prov_ssl.err 2>/dev/null)"; return 1
