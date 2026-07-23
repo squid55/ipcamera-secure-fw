@@ -22,3 +22,8 @@ tls=self-signed
 
 # [선택] 관리자 통보 대상(연속 인증실패 등 알림 주소) (SFR:2.2.2)
 notify=admin@example.org
+
+# [선택] syslog-over-TLS off-box 로그서버 — 감사기록 원격 사본(8.3.1) + 관리자 통보 전송(2.2.2)
+#   형식: host:port (port 생략 시 6514/RFC5425). 서버 인증서 검증용 CA 는 boot 파티션에
+#   logserver-ca.pem 파일로 함께 두면 자동 설치·검증(권장). 없으면 검증 없이 전송.
+#syslog=logserver.example.org:6514

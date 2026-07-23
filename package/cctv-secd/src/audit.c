@@ -37,11 +37,13 @@ static uint8_t  genesis_mac[MAC_LEN];     /* 현재 세그먼트 첫 레코드�
 static char audit_dir[256] = "/data/audit";
 static char keyfile[256]   = "/data/cred/audit.key";
 static FILE *fp;                          /* current.log append 핸들 */
+static int (*g_forward)(const char *);    /* off-box 전송 훅(8.3.1) */
 
 void audit_set_dir(const char *dir) {
 	if (!dir) return;
 	snprintf(audit_dir, sizeof(audit_dir), "%s", dir);
 }
+void audit_set_forward(int (*fn)(const char *line)) { g_forward = fn; }
 
 /* ---- 16진 ---- */
 static void tohex(const uint8_t *in, size_t n, char *out) {
@@ -185,6 +187,11 @@ int audit_append(const char *event) {
 	if (fflush(fp) != 0 || fsync(fileno(fp)) != 0) return -1;   /* 디스크 반영 확인 */
 	memcpy(last_mac, r->mac, MAC_LEN);
 	next_seq++; n_rec++;
+	if (g_forward) {                          /* SFR:8.3.1 off-box 사본(best-effort) */
+		char fl[EVENT_MAX + 40];
+		snprintf(fl, sizeof(fl), "seq=%llu %s", (unsigned long long)r->seq, r->event);
+		g_forward(fl);
+	}
 	return 0;
 }
 

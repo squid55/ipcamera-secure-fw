@@ -18,6 +18,7 @@
 #include "config_store.h"
 #include "provision.h"
 #include "selftest.h"
+#include "logsink.h"
 
 #define IDLE_TIMEOUT 600u    /* 세션 미사용 종료: 10분 */
 #define AUDIT_HW     3500u   /* 감사기록 용량 임계치 */
@@ -31,8 +32,8 @@
 static int provision_firstboot(void) {
 	return access("/data/.provisioned", F_OK) == 0;   /* 1=완료, 0=미완료 */
 }
-/* SFR:2.2.2 [STUB] 관리자 통보(전달 채널 미구현 — 현재 감사기록만. 외부 push/메일 후속) */
-static void notify_admin(const char *msg) { audit_append(msg); }
+/* SFR:2.2.2 관리자 즉시 통보 — 감사기록 + syslog-TLS off-box 전송(설정 시). */
+static void notify_admin(const char *msg) { audit_append(msg); logsink_alert(msg); }
 
 /* SFR:5.1.1 자체시험  SFR:5.2.1 제품·설정 무결성 검증  SFR:5.2.3 결과 확인
  * 파일 매니페스트 HMAC 재검증(프로비저닝이 생성). 반환 0=무결, 비-0=실패.
@@ -91,6 +92,8 @@ int main(int argc, char **argv) {
 
 	if (crypto_hal_init() != CH_OK) return 1;   /* SFR:9.1.1 백엔드 초기화+자체시험 */
 	audit_init();                                /* SFR:8.1.1/8.3.1/8.5.1 파일 영속 감사 체인(/data/audit) */
+	logsink_init("/data/logsink.conf");          /* SFR:8.3.1/2.2.2 syslog-TLS off-box(설정 시) */
+	audit_set_forward(logsink_send);             /* 감사 이벤트 off-box 사본 */
 	session_init();
 	mgmt_init();
 	config_store_init();

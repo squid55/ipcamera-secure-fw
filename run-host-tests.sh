@@ -9,22 +9,26 @@ SD=package/cctv-secd
 CFLAGS="-Wall -Wextra -I $CH/include -I $SD/src"
 OUT=$(mktemp -d)
 
-SECD_SRC="$SD/src/main.c $SD/src/auth.c $SD/src/audit.c $SD/src/session.c $SD/src/mgmt.c $SD/src/config_store.c $SD/src/provision.c $SD/src/selftest.c"
-LIB_SRC="$SD/src/auth.c $SD/src/audit.c $SD/src/session.c $SD/src/mgmt.c $SD/src/config_store.c $SD/src/provision.c $SD/src/selftest.c"
+SECD_SRC="$SD/src/main.c $SD/src/auth.c $SD/src/audit.c $SD/src/session.c $SD/src/mgmt.c $SD/src/config_store.c $SD/src/provision.c $SD/src/selftest.c $SD/src/logsink.c"
+LIB_SRC="$SD/src/auth.c $SD/src/audit.c $SD/src/session.c $SD/src/mgmt.c $SD/src/config_store.c $SD/src/provision.c $SD/src/selftest.c $SD/src/logsink.c"
 
 echo "== 데몬 전체 컴파일 확인 =="
-gcc $CFLAGS $SECD_SRC $CH/src/crypto_hal_openssl.c -lcrypto -o "$OUT/cctv-secd"
+gcc $CFLAGS $SECD_SRC $CH/src/crypto_hal_openssl.c -lssl -lcrypto -o "$OUT/cctv-secd"
 echo "  ok: cctv-secd 링크 성공"
 
 echo "== crypto_hal 테스트 =="
-gcc $CFLAGS $CH/test/test_crypto.c $CH/src/crypto_hal_openssl.c -lcrypto -o "$OUT/test_crypto"
+gcc $CFLAGS $CH/test/test_crypto.c $CH/src/crypto_hal_openssl.c -lssl -lcrypto -o "$OUT/test_crypto"
 "$OUT/test_crypto"
 
 echo "== auth·audit·session·mgmt·config 테스트 =="
 # -DAUDIT_TEST: 테스트 빌드에서만 audit_test_tamper 노출(양산 데몬엔 미포함)
 gcc $CFLAGS -DAUDIT_TEST $SD/test/test_secd.c $LIB_SRC \
-	$CH/src/crypto_hal_openssl.c -lcrypto -o "$OUT/test_secd"
+	$CH/src/crypto_hal_openssl.c -lssl -lcrypto -o "$OUT/test_secd"
 "$OUT/test_secd"
 
 rm -rf "$OUT"
+
+echo "== logsink (syslog-over-TLS) end-to-end 테스트 =="
+./test-logsink.sh >/dev/null 2>&1 && echo "  ok: TLS 전송·수신 확인" || { echo "  FAIL: logsink"; exit 1; }
+
 echo "== 전체 호스트 테스트 통과 =="

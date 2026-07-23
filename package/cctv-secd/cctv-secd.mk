@@ -10,8 +10,8 @@ CCTV_SECD_LICENSE = MIT
 define CCTV_SECD_BUILD_CMDS
 	$(TARGET_CC) $(TARGET_CFLAGS) -Wall -o $(@D)/cctv-secd \
 		$(@D)/main.c $(@D)/auth.c $(@D)/audit.c \
-		$(@D)/session.c $(@D)/mgmt.c $(@D)/config_store.c $(@D)/provision.c $(@D)/selftest.c \
-		$(TARGET_LDFLAGS) -lcrypto_hal -lcrypto
+		$(@D)/session.c $(@D)/mgmt.c $(@D)/config_store.c $(@D)/provision.c $(@D)/selftest.c $(@D)/logsink.c \
+		$(TARGET_LDFLAGS) -lcrypto_hal -lssl -lcrypto
 endef
 
 define CCTV_SECD_INSTALL_TARGET_CMDS
