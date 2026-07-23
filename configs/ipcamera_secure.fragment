@@ -21,6 +21,9 @@ BR2_PACKAGE_GST1_LIBAV=y
 BR2_PACKAGE_LIGHTTPD=y
 BR2_PACKAGE_LIGHTTPD_OPENSSL=y
 BR2_PACKAGE_OPENSSL=y
+# openssl CLI(바이너리) — firstboot 프로비저닝의 자체서명 인증서 생성(S20provision)에 필요.
+# (기본은 라이브러리만 설치되어 `openssl` 명령이 없음 → 인증서 생성 실패)
+BR2_PACKAGE_LIBOPENSSL_BIN=y
 BR2_PACKAGE_NFTABLES=y
 BR2_PACKAGE_CHRONY=y
 BR2_PACKAGE_OPENSSH=y

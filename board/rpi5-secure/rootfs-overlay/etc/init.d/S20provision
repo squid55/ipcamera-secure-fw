@@ -69,9 +69,11 @@ start() {
 	if [ "$tls" = "self-signed" ]; then
 		if [ ! -f "$TLSDIR/server.crt" ]; then
 			log "기기 자체서명 인증서 생성"
-			openssl req -x509 -newkey rsa:2048 -sha256 -days 825 -nodes \
+			if ! openssl req -x509 -newkey rsa:2048 -sha256 -days 825 -nodes \
 				-keyout "$TLSDIR/server.key" -out "$TLSDIR/server.crt" \
-				-subj "/CN=ipcam" >/dev/null 2>&1 || { log "인증서 생성 실패"; return 1; }
+				-subj "/CN=ipcam" 2>/tmp/prov_ssl.err; then
+				log "인증서 생성 실패: $(head -1 /tmp/prov_ssl.err 2>/dev/null)"; return 1
+			fi
 			chmod 600 "$TLSDIR/server.key"
 		fi
 	else
