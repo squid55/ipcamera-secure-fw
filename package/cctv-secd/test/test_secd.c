@@ -5,8 +5,10 @@
 #include "mgmt.h"
 #include "config_store.h"
 #include "provision.h"
+#include "selftest.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 static int fails = 0;
 #define CHECK(c, msg) do { if (!(c)) { printf("  FAIL: %s\n", msg); fails++; } else printf("  ok: %s\n", msg); } while (0)
@@ -36,7 +38,9 @@ int main(void) {
 	printf("[인증] 실패 사유 미노출 (SFR:2.5.2)\n");
 	CHECK(strcmp(auth_generic_fail_msg(), "인증에 실패했습니다.") == 0, "일반화 메시지");
 
-	printf("[감사] append-only 해시체인 무결성 (SFR:8.1.1/8.3.1)\n");
+	printf("[감사] 파일 영속 append-only 해시체인 (SFR:8.1.1/8.3.1)\n");
+	system("rm -rf /tmp/cctv_audit_test");
+	audit_set_dir("/tmp/cctv_audit_test");
 	audit_init();
 	audit_append("login success user=admin");
 	audit_append("policy changed key=retention");
@@ -46,7 +50,16 @@ int main(void) {
 	audit_test_tamper(1, "policy changed key=DISABLED");
 	CHECK(!audit_verify(), "변조 시 검증 실패(탐지)");
 
-	printf("[감사] 조회·정렬 + 용량 회전(체인 연속성) (SFR:8.2.1/8.2.2/8.4.1)\n");
+	printf("[감사] 재부팅(재-init) 영속·체인 연속성 (SFR:8.1.1/8.1.3)\n");
+	audit_init();                                              /* 파일에서 재로드 */
+	CHECK(audit_count() == 3, "재-init 후 3건 복원(디스크 영속)");
+	CHECK(audit_verify(), "재로드된 체인 무결성 통과(연속성)");
+	audit_append("after reboot event");
+	CHECK(audit_count() == 4 && audit_verify(), "재부팅 후 이어쓰기 + 체인 연속");
+
+	printf("[감사] 조회·정렬 + 용량 회전·아카이브 (SFR:8.2.1/8.2.2/8.4.1/8.5.1)\n");
+	system("rm -rf /tmp/cctv_audit_test2");
+	audit_set_dir("/tmp/cctv_audit_test2");
 	audit_init();
 	audit_append("login user=admin");
 	audit_append("policy change");
@@ -54,9 +67,9 @@ int main(void) {
 	size_t idx[8];
 	CHECK(audit_query("login", 1, idx, 8) == 2, "substr 'login' 2건");
 	CHECK(audit_query(NULL, 0, idx, 8) == 3 && idx[0] == 2, "내림차순(최신 먼저)");
-	CHECK(audit_capacity_guard(3) == 1 && audit_count() == 0, "용량 도달 시 회전");
+	CHECK(audit_capacity_guard(3) == 1 && audit_count() == 0, "용량 도달 시 회전(아카이브)");
 	audit_append("after rotate");
-	CHECK(audit_verify(), "회전 후 세그먼트도 검증 통과");
+	CHECK(audit_verify(), "회전 후 세그먼트도 검증 통과(체인 연속)");
 
 	printf("[세션] 미사용 종료 + 중복접속/중복sid 거부 (SFR:7.1.1/7.2.1)\n");
 	session_init();
@@ -102,7 +115,24 @@ int main(void) {
 	char pw1[64], pw2[64];
 	CHECK(provision_gen_password(pw1, sizeof(pw1)) == PV_OK && strlen(pw1) == 24, "임시 PW 생성(24hex)");
 	CHECK(provision_gen_password(pw2, sizeof(pw2)) == PV_OK && strcmp(pw1, pw2) != 0, "매번 다른 난수 PW");
+	CHECK(provision_gen_keyfile("/tmp/.cctv_test_auditkey", 32) == PV_OK, "per-device 감사 키파일 생성(32B)");
+	remove("/tmp/.cctv_test_auditkey");
 	remove(credp);
+
+	printf("[자체시험] 파일 매니페스트 무결성 검증 (SFR:5.1.1/5.2.1)\n");
+	selftest_set_keyfile("/tmp/.cctv_st_key");
+	provision_gen_keyfile("/tmp/.cctv_st_key", 32);            /* per-device 키 */
+	FILE *tf = fopen("/tmp/.cctv_st_a", "w"); fputs("critical binary A", tf); fclose(tf);
+	tf = fopen("/tmp/.cctv_st_b", "w"); fputs("config B", tf); fclose(tf);
+	const char *stfiles[] = { "/tmp/.cctv_st_a", "/tmp/.cctv_st_b" };
+	CHECK(selftest_gen("/tmp/.cctv_st_manifest", stfiles, 2) == 0, "매니페스트 생성");
+	CHECK(selftest_verify("/tmp/.cctv_st_manifest") == 0, "무결 시 검증 통과(0)");
+	tf = fopen("/tmp/.cctv_st_b", "w"); fputs("config B TAMPERED", tf); fclose(tf);
+	CHECK(selftest_verify("/tmp/.cctv_st_manifest") == 1, "변조 파일 1건 탐지");
+	remove("/tmp/.cctv_st_a");
+	CHECK(selftest_verify("/tmp/.cctv_st_manifest") == 2, "삭제+변조 2건 탐지");
+	CHECK(selftest_verify("/tmp/.no_such_manifest") == -1, "매니페스트 없음 → 오류(fail-closed)");
+	remove("/tmp/.cctv_st_b"); remove("/tmp/.cctv_st_manifest"); remove("/tmp/.cctv_st_key");
 
 	printf("\n%s (실패 %d)\n", fails ? "❌ 테스트 실패" : "✅ 전체 통과", fails);
 	return fails ? 1 : 0;

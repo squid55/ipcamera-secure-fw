@@ -4,7 +4,9 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-int    audit_init(void);                 /* SFR:8.1.1 */
+/* 영속 저장 디렉터리 지정(기본 /data/audit). audit_init 전에 호출. 테스트/구성용. */
+void   audit_set_dir(const char *dir);
+int    audit_init(void);                 /* SFR:8.1.1 파일 영속 로드(있으면 체인 이어감) */
 int    audit_append(const char *event);  /* SFR:8.3.1 append-only + 체인. 실패 시 -1(fail-closed) */
 bool   audit_verify(void);               /* 체인 무결성 검증 */
 size_t audit_count(void);

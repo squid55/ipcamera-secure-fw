@@ -143,3 +143,20 @@ pv_rc provision_gen_password(char *out, size_t outsz) {
 	memset(raw, 0, sizeof(raw));
 	return PV_OK;
 }
+
+pv_rc provision_gen_keyfile(const char *path, size_t nbytes) {
+	if (!path || nbytes == 0 || nbytes > 64) return PV_ERR;
+	uint8_t buf[64];
+	if (crypto_hal_random(buf, nbytes) != CH_OK) return PV_ERR;   /* SFR:9.2.1 */
+
+	char tmp[512];
+	if (snprintf(tmp, sizeof(tmp), "%s.tmp", path) >= (int)sizeof(tmp)) { memset(buf,0,sizeof(buf)); return PV_IO; }
+	FILE *f = fopen(tmp, "wb");
+	if (!f) { memset(buf, 0, sizeof(buf)); return PV_IO; }
+	size_t w = fwrite(buf, 1, nbytes, f);
+	memset(buf, 0, sizeof(buf));
+	if (fclose(f) != 0 || w != nbytes) { remove(tmp); return PV_IO; }
+	if (chmod(tmp, 0600) != 0) { remove(tmp); return PV_IO; }
+	if (rename(tmp, path) != 0) { remove(tmp); return PV_IO; }
+	return PV_OK;
+}

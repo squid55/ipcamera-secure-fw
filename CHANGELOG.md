@@ -4,8 +4,16 @@
 형식은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/), 버전은 [SemVer](https://semver.org/lang/ko/)를 따릅니다.
 
 ## [Unreleased]
-- (다음 작업) 감사기록 영속 저장(8.1.1/8.3.1/8.5.1), 자체시험·dm-verity 배선(5.x)
-- (후속) RPi5 IMX219 카메라 브링업: imx219 오버레이 부트 포함 + libcamera PiSP/IPA — 별개 HW 과제
+> 아래는 **호스트 검증 완료·main 반영**. 실기(RPi5) 검증은 다음 리플래시에 번들 예정(플랫폼 독립 로직이라 통합 리스크 낮음).
+### Added
+- **감사기록 파일 영속**(8.1.1): `/data/audit` append-only + fsync, 재부팅 체인 연속, 타임스탬프(8.1.3)
+- **per-device 감사/자체시험 키**(8.3.1): 프로비저닝 생성 → 소스 상수 placeholder 탈피
+- **감사 회전·아카이브**(8.4.1/8.5.1): 용량/포화 시 검증→아카이브
+- **무결성 자체시험**(5.1.1/5.2.1): 핵심파일 매니페스트 HMAC 검증 + 실패 시 서비스 게이트(5.1.2/5.2.4)
+- `cctv-secd` 서브커맨드: `provision-genkey`, `manifest-gen`
+### 후속
+- 실기 검증(다음 리플래시 번들) → 검증 후 정식 릴리스(v0.1.4)
+- off-box syslog-TLS 전송(8.3.1 강화 + 2.2.2 통보), dm-verity(prevention), RPi5 카메라 브링업(#3)
 
 ## [0.1.3] - 2026-07-23
 > 실기(RPi5) 검증 완료: 부팅·프로비저닝·RTSPS·TLS·인증. 영상 발행 SW 파이프라인 완비.
