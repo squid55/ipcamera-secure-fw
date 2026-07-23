@@ -58,6 +58,9 @@ start() {
 	fi
 	admin_pw=""   # 메모리에서 지움
 
+	# 1b) 감사 체인 per-device 키 생성 (SFR:8.3.1 — 소스 상수 placeholder 탈피)
+	[ -f "$DATA/cred/audit.key" ] || "$SECD" provision-genkey "$DATA/cred/audit.key" 32
+
 	# 2) 영상 계정 자격(viewer=요청/생성, publisher=항상 생성)
 	[ "$viewer_pw" = "generate" ] || [ -z "$viewer_pw" ] && viewer_pw=$("$SECD" genpw)
 	publisher_pw=$("$SECD" genpw)

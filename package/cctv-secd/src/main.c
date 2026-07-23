@@ -7,6 +7,7 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
 #include <crypto_hal.h>
@@ -57,7 +58,9 @@ static int cli_provision(int argc, char **argv) {
 		puts(pw);
 		return 0;
 	}
-	fprintf(stderr, "usage: cctv-secd [provision-set-mgmt|provision-verify-mgmt <user> <pw> <credpath>|genpw]\n");
+	if (strcmp(argv[1], "provision-genkey") == 0 && argc == 4)   /* SFR:9.2.1 per-device 키파일 */
+		return provision_gen_keyfile(argv[2], (size_t)strtoul(argv[3], NULL, 10)) == PV_OK ? 0 : 1;
+	fprintf(stderr, "usage: cctv-secd [provision-set-mgmt|provision-verify-mgmt <user> <pw> <credpath>|provision-genkey <path> <nbytes>|genpw]\n");
 	return 2;
 }
 
@@ -65,7 +68,7 @@ int main(int argc, char **argv) {
 	if (argc > 1) return cli_provision(argc, argv);   /* 서브커맨드 모드 */
 
 	if (crypto_hal_init() != CH_OK) return 1;   /* SFR:9.1.1 백엔드 초기화+자체시험 */
-	audit_init();                                /* SFR:8.1.1 */
+	audit_init();                                /* SFR:8.1.1/8.3.1/8.5.1 파일 영속 감사 체인(/data/audit) */
 	session_init();
 	mgmt_init();
 	config_store_init();

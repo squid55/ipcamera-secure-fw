@@ -24,4 +24,8 @@ pv_rc provision_verify_mgmt_cred(const char *user, const char *pw, const char *p
  * outsz 는 (2*요청바이트 + 1) 이상. 기본 24hex(=12바이트 엔트로피). */
 pv_rc provision_gen_password(char *out, size_t outsz);
 
+/* 랜덤 바이트 키파일 생성(감사 체인 키 등). 0600 원자적 기록. nbytes<=64. SFR:9.2.1
+ * per-device 키로 소스 상수 placeholder 를 탈피 → 감사 위변조 탐지(8.3.1) 실효 향상. */
+pv_rc provision_gen_keyfile(const char *path, size_t nbytes);
+
 #endif
