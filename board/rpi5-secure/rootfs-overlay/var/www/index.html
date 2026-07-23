@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ipcam 관리</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <div class="brand"><span class="dot"></span> ipcam <small>보안 IP카메라 관리</small></div>
+  <div class="host" id="host">—</div>
+</header>
+
+<main>
+  <section class="card live">
+    <h2>라이브 뷰</h2>
+    <p class="muted">WebRTC(저지연) 또는 HLS(호환)로 실시간 영상. 인증(viewer 계정) 필요.</p>
+    <div class="btns">
+      <a class="btn primary" id="webrtc-test" target="_blank" rel="noopener">▶ WebRTC · test 패턴</a>
+      <a class="btn" id="webrtc-cam" target="_blank" rel="noopener">▶ WebRTC · 카메라(cam)</a>
+      <a class="btn" id="hls" target="_blank" rel="noopener">▶ HLS</a>
+    </div>
+    <p class="note">카메라(cam)는 IMX219 PiSP 연동 후 활성화됩니다. 현재는 test 패턴으로 스트리밍 스택 실증.</p>
+  </section>
+
+  <section class="card">
+    <h2>스트림 주소</h2>
+    <table class="kv">
+      <tr><td>RTSPS</td><td><code id="rtsps">—</code></td></tr>
+      <tr><td>WebRTC</td><td><code id="rtc">—</code></td></tr>
+      <tr><td>HLS</td><td><code id="hlsurl">—</code></td></tr>
+    </table>
+    <p class="note">전송은 TLS(암호화)·계정 인증. 평문 접근 없음.</p>
+  </section>
+
+  <section class="card">
+    <h2>보안 상태</h2>
+    <ul class="status">
+      <li>✅ 관리 접속 HTTPS(TLS) · Basic 인증</li>
+      <li>✅ 영상 RTSPS/WebRTC/HLS TLS 암호전송 + 계정 인증</li>
+      <li>✅ 최초부팅 프로비저닝 · 감사기록 영속 · 무결성 자체시험</li>
+      <li class="muted">⚙ 설정·사용자 관리 UI — 준비 중</li>
+    </ul>
+  </section>
+</main>
+
+<footer>ipcam · 국정원 보안기능확인서 대응 프로토타입</footer>
+
+<script>
+  var h = location.hostname;
+  document.getElementById('host').textContent = h;
+  document.getElementById('webrtc-test').href = 'https://' + h + ':8889/test/';
+  document.getElementById('webrtc-cam').href  = 'https://' + h + ':8889/cam/';
+  document.getElementById('hls').href         = 'https://' + h + ':8888/test/index.m3u8';
+  document.getElementById('rtsps').textContent  = 'rtsps://viewer@' + h + ':8322/test';
+  document.getElementById('rtc').textContent    = 'https://' + h + ':8889/test/';
+  document.getElementById('hlsurl').textContent = 'https://' + h + ':8888/test/index.m3u8';
+</script>
+</body>
+</html>

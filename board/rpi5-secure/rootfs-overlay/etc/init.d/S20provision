@@ -57,6 +57,11 @@ start() {
 	if ! "$SECD" provision-set-mgmt admin "$admin_pw" "$CRED"; then
 		log "관리 암호 설정 실패(정책 위반?) — 프로비저닝 중단"; return 1
 	fi
+	# 1a) 웹 관리 UI Basic 인증 암호 (lighttpd htpasswd, SHA-512 crypt) (SFR:2.1.1/4.1.1)
+	mkdir -p "$DATA/web"; chmod 700 "$DATA/web"
+	printf 'admin:%s\n' "$(printf '%s' "$admin_pw" | openssl passwd -6 -stdin)" > "$DATA/web/passwd"
+	chmod 600 "$DATA/web/passwd"
+
 	admin_pw=""   # 메모리에서 지움
 
 	# 1b) 감사 체인 per-device 키 생성 (SFR:8.3.1 — 소스 상수 placeholder 탈피)
@@ -68,6 +73,7 @@ start() {
 		/usr/sbin/cctv-secd /usr/lib/libcrypto_hal.so /etc/mediamtx.yml \
 		/etc/init.d/S20provision /etc/init.d/S65rtsp-server /etc/init.d/S30nftables \
 		/etc/nftables.conf /etc/init.d/S15mountdata /etc/init.d/S60cctv-secd \
+		/etc/lighttpd/lighttpd.conf /etc/init.d/S50lighttpd /var/www/index.html \
 		|| log "매니페스트 생성 실패"
 
 	# 2) 영상 계정 자격(viewer=요청/생성, publisher=항상 생성)

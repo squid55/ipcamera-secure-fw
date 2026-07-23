@@ -1,0 +1,25 @@
+#!/bin/sh
+# lighttpd 웹 관리 UI (HTTPS) — 프로비저닝(인증서+관리암호) 후에만 기동.
+#   미프로비저닝/무결성실패/인증서·암호 부재 시 보류(fail-closed).
+CONF=/etc/lighttpd/lighttpd.conf
+DAEMON=/usr/sbin/lighttpd
+
+case "$1" in
+	start)
+		if [ ! -f /data/.provisioned ]; then
+			echo "lighttpd: 미프로비저닝 — 기동 보류"; exit 0
+		fi
+		if [ -f /data/.integrity-fail ]; then
+			echo "lighttpd: 무결성 자체시험 실패 — 기동 보류"; exit 0
+		fi
+		if [ ! -f /data/tls/server.crt ] || [ ! -f /data/web/passwd ]; then
+			echo "lighttpd: 인증서/관리암호 없음 — 기동 보류"; exit 0
+		fi
+		printf "Starting lighttpd (web UI): "
+		"$DAEMON" -f "$CONF" && echo "OK" || echo "FAIL"
+		;;
+	stop)
+		printf "Stopping lighttpd: "; killall lighttpd 2>/dev/null; echo "OK" ;;
+	restart) "$0" stop; "$0" start ;;
+	*) echo "Usage: $0 {start|stop|restart}"; exit 1 ;;
+esac
