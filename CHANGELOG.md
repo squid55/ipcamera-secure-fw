@@ -4,7 +4,10 @@
 형식은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/), 버전은 [SemVer](https://semver.org/lang/ko/)를 따릅니다.
 
 ## [Unreleased]
-> 아래는 **호스트 검증 완료·main 반영**. 실기(RPi5) 검증은 다음 리플래시에 번들 예정(플랫폼 독립 로직이라 통합 리스크 낮음).
+- (다음) dm-verity(무결성 prevention), A/B 롤백(6.1.3), 하드웨어 키(SoC), RPi5 카메라 브링업(#3), 8.3.2 암호화 저장(선택)
+
+## [0.1.4] - 2026-07-23
+> **실기(RPi5) 검증 완료**: 부팅·프로비저닝·self_test 통과·cctv-secd(파일영속 감사 + 자체시험 + syslog-TLS) 실행 확인.
 ### Added
 - **감사기록 파일 영속**(8.1.1): `/data/audit` append-only + fsync, 재부팅 체인 연속, 타임스탬프(8.1.3)
 - **per-device 감사/자체시험 키**(8.3.1): 프로비저닝 생성 → 소스 상수 placeholder 탈피
@@ -13,9 +16,8 @@
 - **syslog-over-TLS off-box 전송**(8.3.1): 감사기록 원격 사본 + **관리자 즉시 통보**(2.2.2). RFC5424/5425, 서버 인증서 CA 검증
 - `cctv-secd` 서브커맨드: `provision-genkey`, `manifest-gen`
 - **커버리지: 구현 49 / 스텁 0 / 미착수 1(8.3.2 선택)** — 필수·조건부 전 항목 실구현
-### 후속
-- 실기 검증(다음 리플래시 번들) → 검증 후 정식 릴리스(v0.1.4)
-- dm-verity(무결성 prevention), 하드웨어 키(SoC), A/B 롤백, RPi5 카메라 브링업(#3)
+### 알려진 한계(후속)
+- dm-verity(무결성 prevention), 하드웨어 키(SoC 필요), A/B 롤백, RPi5 카메라(#3), 8.3.2 암호화저장(선택)
 
 ## [0.1.3] - 2026-07-23
 > 실기(RPi5) 검증 완료: 부팅·프로비저닝·RTSPS·TLS·인증. 영상 발행 SW 파이프라인 완비.
@@ -50,7 +52,8 @@
 ### Added
 - RPi5 + IMX219 최초 부팅 이미지, 보안 데몬·crypto HAL·하드닝 골격
 
-[Unreleased]: https://github.com/squid55/ipcamera-secure-fw/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/squid55/ipcamera-secure-fw/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/squid55/ipcamera-secure-fw/releases/tag/v0.1.4
 [0.1.3]: https://github.com/squid55/ipcamera-secure-fw/releases/tag/v0.1.3
 [0.1.2-headless]: https://github.com/squid55/ipcamera-secure-fw/releases/tag/v0.1.2-headless
 [0.1.1-headless]: https://github.com/squid55/ipcamera-secure-fw/releases/tag/v0.1.1-headless
