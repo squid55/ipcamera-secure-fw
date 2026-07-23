@@ -5,9 +5,13 @@
 logLevel: info
 logDestinations: [stdout]
 
-# --- RTSPS (SFR:1.2.1) 포트 8322 ---
+# --- RTSP/RTSPS (SFR:1.2.1) ---
+#   외부 시청=RTSPS(8322, TLS). 내부 발행=평문 loopback(127.0.0.1:8554)만 → 외부 노출 0.
+#   (자체서명 RTSPS 루프백 발행은 gstreamer에서 불안정 → 내부는 평문 loopback으로 분리)
 rtsp: yes
-encryption: "strict"                       # 평문 RTSP 거부, TLS만
+encryption: "optional"                     # plain(loopback) + RTSPS(외부) 동시
+rtspAddress: 127.0.0.1:8554                # 평문 RTSP는 loopback 전용(외부 불가)
+rtspsAddress: :8322                         # RTSPS는 전 인터페이스(외부 시청)
 protocols: [tcp]
 serverCert: /data/tls/server.crt
 serverKey:  /data/tls/server.key
@@ -54,11 +58,9 @@ paths:
       gst-launch-1.0 libcamerasrc ! video/x-raw,width=1920,height=1080,framerate=30/1 !
       tee name=t
       t. ! queue ! videoconvert ! x264enc speed-preset=ultrafast tune=zerolatency bitrate=4000 !
-      h264parse ! rtspclientsink location=rtsps://publisher:__PUBLISHER_PW__@localhost:8322/cam tls-validation-flags=0
-      t. ! queue ! videoscale ! video/x-raw,width=640,height=480 ! videoconvert !
+      h264parse ! rtspclientsink location=rtsp://publisher:__PUBLISHER_PW__@127.0.0.1:8554/cam      t. ! queue ! videoscale ! video/x-raw,width=640,height=480 ! videoconvert !
       x264enc speed-preset=ultrafast tune=zerolatency bitrate=800 !
-      h264parse ! rtspclientsink location=rtsps://publisher:__PUBLISHER_PW__@localhost:8322/cam_sub tls-validation-flags=0
-    runOnInitRestart: yes
+      h264parse ! rtspclientsink location=rtsp://publisher:__PUBLISHER_PW__@127.0.0.1:8554/cam_sub    runOnInitRestart: yes
   cam_sub:
     # cam 파이프라인이 발행. 별도 소스 없음(수신 전용).
 
@@ -68,5 +70,4 @@ paths:
     runOnInit: >
       gst-launch-1.0 videotestsrc is-live=true ! video/x-raw,width=1280,height=720,framerate=25/1 !
       videoconvert ! x264enc speed-preset=ultrafast tune=zerolatency bitrate=2000 !
-      h264parse ! rtspclientsink location=rtsps://publisher:__PUBLISHER_PW__@localhost:8322/test tls-validation-flags=0
-    runOnInitRestart: yes
+      h264parse ! rtspclientsink location=rtsp://publisher:__PUBLISHER_PW__@127.0.0.1:8554/test    runOnInitRestart: yes
