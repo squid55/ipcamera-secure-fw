@@ -5,6 +5,7 @@
 #include "mgmt.h"
 #include "config_store.h"
 #include "provision.h"
+#include "selftest.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -117,6 +118,21 @@ int main(void) {
 	CHECK(provision_gen_keyfile("/tmp/.cctv_test_auditkey", 32) == PV_OK, "per-device 감사 키파일 생성(32B)");
 	remove("/tmp/.cctv_test_auditkey");
 	remove(credp);
+
+	printf("[자체시험] 파일 매니페스트 무결성 검증 (SFR:5.1.1/5.2.1)\n");
+	selftest_set_keyfile("/tmp/.cctv_st_key");
+	provision_gen_keyfile("/tmp/.cctv_st_key", 32);            /* per-device 키 */
+	FILE *tf = fopen("/tmp/.cctv_st_a", "w"); fputs("critical binary A", tf); fclose(tf);
+	tf = fopen("/tmp/.cctv_st_b", "w"); fputs("config B", tf); fclose(tf);
+	const char *stfiles[] = { "/tmp/.cctv_st_a", "/tmp/.cctv_st_b" };
+	CHECK(selftest_gen("/tmp/.cctv_st_manifest", stfiles, 2) == 0, "매니페스트 생성");
+	CHECK(selftest_verify("/tmp/.cctv_st_manifest") == 0, "무결 시 검증 통과(0)");
+	tf = fopen("/tmp/.cctv_st_b", "w"); fputs("config B TAMPERED", tf); fclose(tf);
+	CHECK(selftest_verify("/tmp/.cctv_st_manifest") == 1, "변조 파일 1건 탐지");
+	remove("/tmp/.cctv_st_a");
+	CHECK(selftest_verify("/tmp/.cctv_st_manifest") == 2, "삭제+변조 2건 탐지");
+	CHECK(selftest_verify("/tmp/.no_such_manifest") == -1, "매니페스트 없음 → 오류(fail-closed)");
+	remove("/tmp/.cctv_st_b"); remove("/tmp/.cctv_st_manifest"); remove("/tmp/.cctv_st_key");
 
 	printf("\n%s (실패 %d)\n", fails ? "❌ 테스트 실패" : "✅ 전체 통과", fails);
 	return fails ? 1 : 0;

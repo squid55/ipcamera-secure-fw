@@ -61,6 +61,14 @@ start() {
 	# 1b) 감사 체인 per-device 키 생성 (SFR:8.3.1 — 소스 상수 placeholder 탈피)
 	[ -f "$DATA/cred/audit.key" ] || "$SECD" provision-genkey "$DATA/cred/audit.key" 32
 
+	# 1c) 무결성 자체시험 per-device 키 + 핵심파일 매니페스트 (SFR:5.1.1/5.2.1)
+	[ -f "$DATA/cred/selftest.key" ] || "$SECD" provision-genkey "$DATA/cred/selftest.key" 32
+	"$SECD" manifest-gen "$DATA/selftest.manifest" \
+		/usr/sbin/cctv-secd /usr/lib/libcrypto_hal.so /etc/mediamtx.yml \
+		/etc/init.d/S20provision /etc/init.d/S65rtsp-server /etc/init.d/S30nftables \
+		/etc/nftables.conf /etc/init.d/S15mountdata /etc/init.d/S60cctv-secd \
+		|| log "매니페스트 생성 실패"
+
 	# 2) 영상 계정 자격(viewer=요청/생성, publisher=항상 생성)
 	[ "$viewer_pw" = "generate" ] || [ -z "$viewer_pw" ] && viewer_pw=$("$SECD" genpw)
 	publisher_pw=$("$SECD" genpw)

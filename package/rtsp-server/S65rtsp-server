@@ -14,6 +14,10 @@ case "$1" in
 		if [ ! -f /data/.provisioned ]; then
 			echo "rtsp-server: 미프로비저닝 — 기동 보류(프로비저닝 후 개방)"; exit 0
 		fi
+		# SFR:5.1.2/5.2.4 무결성 자체시험 실패 시 기동 보류(fail-closed)
+		if [ -f /data/.integrity-fail ]; then
+			echo "rtsp-server: 무결성 자체시험 실패 — 기동 보류"; exit 0
+		fi
 		# SFR:1.2.1 인증서 없으면 평문 폴백 금지 — 기동 보류
 		if [ ! -f "$TLSDIR/server.crt" ] || [ ! -f "$TLSDIR/server.key" ]; then
 			echo "rtsp-server: TLS 인증서 없음 — 기동 보류"; exit 1

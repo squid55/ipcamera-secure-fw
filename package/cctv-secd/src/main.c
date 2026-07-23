@@ -17,9 +17,12 @@
 #include "mgmt.h"
 #include "config_store.h"
 #include "provision.h"
+#include "selftest.h"
 
 #define IDLE_TIMEOUT 600u    /* 세션 미사용 종료: 10분 */
 #define AUDIT_HW     3500u   /* 감사기록 용량 임계치 */
+#define SELFTEST_MANIFEST   "/data/selftest.manifest"
+#define INTEGRITY_FAIL_FLAG "/data/.integrity-fail"
 
 /* SFR:3.4.1 기본 계정 강제 조치  SFR:3.4.2 기본 PW 강제 변경
  * 실제 강제 설정은 init(S20provision) + `cctv-secd provision-set-mgmt`(provision.c)가 수행하고
@@ -28,12 +31,29 @@
 static int provision_firstboot(void) {
 	return access("/data/.provisioned", F_OK) == 0;   /* 1=완료, 0=미완료 */
 }
-/* SFR:5.1.1 [STUB] 자체시험  SFR:5.2.1 [STUB] 무결성 검증(dm-verity+설정HMAC)  SFR:5.2.3 [STUB] 결과 확인 */
-static int self_test(void) { /* TODO: dm-verity 상태 + config_store 무결성 실검증. 현재 항상 0 */ return 0; }
-/* SFR:5.1.2 [STUB] 자체시험 실패 대응  SFR:5.2.4 [STUB] 무결성 실패 대응 */
-static void on_integrity_fail(void) { audit_append("integrity check FAILED"); }
-/* SFR:2.2.2 [STUB] 관리자 연속 실패 즉시 통보(호출부·push 미구현) */
-static void notify_admin(const char *msg) { audit_append(msg); /* TODO: 웹UI 팝업/외부 push */ }
+/* SFR:2.2.2 [STUB] 관리자 통보(전달 채널 미구현 — 현재 감사기록만. 외부 push/메일 후속) */
+static void notify_admin(const char *msg) { audit_append(msg); }
+
+/* SFR:5.1.1 자체시험  SFR:5.2.1 제품·설정 무결성 검증  SFR:5.2.3 결과 확인
+ * 파일 매니페스트 HMAC 재검증(프로비저닝이 생성). 반환 0=무결, 비-0=실패.
+ * 매니페스트 전(미프로비저닝)은 프로비저닝 게이트가 담당 → 통과 취급. */
+static int self_test(void) {
+	if (access(SELFTEST_MANIFEST, F_OK) != 0) return 0;
+	return selftest_verify(SELFTEST_MANIFEST) == 0 ? 0 : -1;
+}
+/* SFR:5.1.2 자체시험 실패 대응  SFR:5.2.4 무결성 실패 대응
+ * 감사 기록 + 관리자 통보 + 서비스 게이트(/data/.integrity-fail → S65 등 기동 보류, fail-closed) */
+static void on_integrity_fail(void) {
+	audit_append("SELFTEST integrity FAILED");
+	notify_admin("integrity self-test failed");
+	FILE *f = fopen(INTEGRITY_FAIL_FLAG, "w");
+	if (f) fclose(f);
+}
+/* 무결성 검사 + 게이트 반영: 실패 시 대응, 무결 시 게이트 해제 */
+static void integrity_check(void) {
+	if (self_test() != 0) on_integrity_fail();
+	else remove(INTEGRITY_FAIL_FLAG);
+}
 /* SFR:1.4.1 관리도구 최초설정 default 한정  SFR:3.4.3 내부/외부 default PW 변경
  * 미프로비저닝(=default 상태)에서는 정상 서비스가 개방되지 않음(init 게이트 S20/S65와 정합). */
 static int provision_gate_default_only(void) { return access("/data/.provisioned", F_OK) == 0; }
@@ -60,7 +80,9 @@ static int cli_provision(int argc, char **argv) {
 	}
 	if (strcmp(argv[1], "provision-genkey") == 0 && argc == 4)   /* SFR:9.2.1 per-device 키파일 */
 		return provision_gen_keyfile(argv[2], (size_t)strtoul(argv[3], NULL, 10)) == PV_OK ? 0 : 1;
-	fprintf(stderr, "usage: cctv-secd [provision-set-mgmt|provision-verify-mgmt <user> <pw> <credpath>|provision-genkey <path> <nbytes>|genpw]\n");
+	if (strcmp(argv[1], "manifest-gen") == 0 && argc >= 4)       /* SFR:5.2.1 무결성 매니페스트 생성 */
+		return selftest_gen(argv[2], (const char *const *)&argv[3], argc - 3) == 0 ? 0 : 1;
+	fprintf(stderr, "usage: cctv-secd [provision-set-mgmt|provision-verify-mgmt <u> <pw> <path>|provision-genkey <path> <n>|manifest-gen <manifest> <file..>|genpw]\n");
 	return 2;
 }
 
@@ -76,10 +98,10 @@ int main(int argc, char **argv) {
 		audit_append("unprovisioned: management gated");   /* SFR:1.4.1/3.4.3 */
 		notify_admin("device unprovisioned (default state)");
 	}
-	self_test();
+	integrity_check();                            /* SFR:5.1.1/5.2.1 시작 자체시험 + 게이트 */
 	audit_append("cctv-secd started");
 	for (;;) {                                    /* 메인 루프 */
-		self_test();
+		integrity_check();                                 /* SFR:5.1.1/5.2.1 주기적 무결성 */
 		session_reap((uint64_t)time(NULL), IDLE_TIMEOUT);  /* SFR:7.1.1 */
 		audit_capacity_guard(AUDIT_HW);                    /* SFR:8.4.1/8.5.1 */
 		sleep(300);

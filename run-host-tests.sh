@@ -9,8 +9,8 @@ SD=package/cctv-secd
 CFLAGS="-Wall -Wextra -I $CH/include -I $SD/src"
 OUT=$(mktemp -d)
 
-SECD_SRC="$SD/src/main.c $SD/src/auth.c $SD/src/audit.c $SD/src/session.c $SD/src/mgmt.c $SD/src/config_store.c $SD/src/provision.c"
-LIB_SRC="$SD/src/auth.c $SD/src/audit.c $SD/src/session.c $SD/src/mgmt.c $SD/src/config_store.c $SD/src/provision.c"
+SECD_SRC="$SD/src/main.c $SD/src/auth.c $SD/src/audit.c $SD/src/session.c $SD/src/mgmt.c $SD/src/config_store.c $SD/src/provision.c $SD/src/selftest.c"
+LIB_SRC="$SD/src/auth.c $SD/src/audit.c $SD/src/session.c $SD/src/mgmt.c $SD/src/config_store.c $SD/src/provision.c $SD/src/selftest.c"
 
 echo "== 데몬 전체 컴파일 확인 =="
 gcc $CFLAGS $SECD_SRC $CH/src/crypto_hal_openssl.c -lcrypto -o "$OUT/cctv-secd"
