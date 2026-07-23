@@ -1,26 +1,46 @@
-# mediamtx 하드닝 설정 — IP카메라 영상 스트리밍
-# SFR:1.1.1 사용자 인증(익명 접근 차단)   SFR:1.2.1 RTSPS 암호전송
+# mediamtx 하드닝 설정 — 범용 IP카메라 스트리밍 (Phase A)
+# SFR:1.1.1 사용자 인증(익명 차단)  SFR:1.2.1 암호전송(TLS)
+# 멀티스트림(main/sub) + RTSPS + WebRTC + HLS. 인증서는 프로비저닝(S20)이 /data/tls 에 발급.
 
 logLevel: info
 logDestinations: [stdout]
 
-# --- RTSPS 암호전송 (SFR:1.2.1) — mediamtx v1.9.3 키 스키마 ---
+# --- RTSP/RTSPS (SFR:1.2.1) ---
+#   외부 시청=RTSPS(8322, TLS). 내부 발행=평문 loopback(127.0.0.1:8554)만 → 외부 노출 0.
+#   (자체서명 RTSPS 루프백 발행은 gstreamer에서 불안정 → 내부는 평문 loopback으로 분리)
 rtsp: yes
-encryption: "strict"            # 평문 RTSP 거부, TLS(RTSPS)만 허용 (RTSPS 포트 8322)
-protocols: [tcp]                # UDP/멀티캐스트 비활성(전송 보호)
-serverCert: /data/tls/server.crt           # 프로비저닝(S20)이 기기별 발급(쓰기가능 파티션)
+encryption: "optional"                     # plain(loopback) + RTSPS(외부) 동시
+rtspAddress: 127.0.0.1:8554                # 평문 RTSP는 loopback 전용(외부 불가)
+rtspsAddress: :8322                         # RTSPS는 전 인터페이스(외부 시청)
+protocols: [tcp]
+serverCert: /data/tls/server.crt
 serverKey:  /data/tls/server.key
+
+# --- WebRTC (PC/폰 브라우저 시청) 포트 8889, TLS ---
+webrtc: yes
+webrtcAddress: :8889
+webrtcEncryption: yes
+webrtcServerCert: /data/tls/server.crt
+webrtcServerKey:  /data/tls/server.key
+webrtcLocalUDPAddress: :8189
+webrtcIPsFromInterfaces: yes
+
+# --- HLS (범용 호환 뷰) 포트 8888, TLS, 저지연 ---
+hls: yes
+hlsAddress: :8888
+hlsEncryption: yes
+hlsServerCert: /data/tls/server.crt
+hlsServerKey:  /data/tls/server.key
+hlsVariant: lowLatency
+
 rtmp: no
-hls: no
-webrtc: no
 srt: no
 
-# --- 사용자 인증 (SFR:1.1.1) — 익명(any) 없음 ---
+# --- 사용자 인증 (SFR:1.1.1) — 익명 없음. viewer는 모든 스트림 read ---
 authMethod: internal
 authInternalUsers:
   - user: viewer
-    # 비밀번호는 프로비저닝(S20) 시 주입 — S65 가 stream.env 로 치환. 기본값 없음.
-    pass: __VIEWER_PW__
+    pass: __VIEWER_PW__                    # S65가 stream.env로 주입
     ips: []
     permissions:
       - action: read
@@ -29,17 +49,15 @@ authInternalUsers:
     permissions:
       - action: publish
 
-# --- 카메라 소스 (IMX219 → libcamera → 소프트 H.264) ---
+# --- 스트림 경로 (runOnInit=단일라인 인용문자열: YAML 폴딩 모호성 제거) ---
 paths:
+  # [메인+서브] IMX219 → 단일 캡처 → tee → main(1080p) + sub(640x480). PiSP 동작 시 활성.
   cam:
-    # RPi5는 HW 인코더 없음 → x264enc(소프트). 2GB 고려 1080p.
-    # 발행은 publisher 계정으로 인증(익명 차단, SFR:1.1.1). __PUBLISHER_PW__ 는 S65가 주입.
-    # 자체서명 루프백 RTSPS 이므로 클라이언트측 인증서 검증은 생략(tls-validation-flags=0).
-    runOnInit: >
-      gst-launch-1.0 libcamerasrc !
-      video/x-raw,width=1920,height=1080,framerate=30/1 !
-      videoconvert ! x264enc speed-preset=ultrafast tune=zerolatency bitrate=4000 !
-      h264parse ! rtspclientsink
-      location=rtsps://publisher:__PUBLISHER_PW__@localhost:8322/cam
-      tls-validation-flags=0
+    runOnInit: 'gst-launch-1.0 libcamerasrc ! video/x-raw,width=1920,height=1080,framerate=30/1 ! tee name=t t. ! queue ! videoconvert ! x264enc speed-preset=ultrafast tune=zerolatency bitrate=4000 ! h264parse ! rtspclientsink protocols=tcp location=rtsp://publisher:__PUBLISHER_PW__@127.0.0.1:8554/cam t. ! queue ! videoscale ! video/x-raw,width=640,height=480 ! videoconvert ! x264enc speed-preset=ultrafast tune=zerolatency bitrate=800 ! h264parse ! rtspclientsink protocols=tcp location=rtsp://publisher:__PUBLISHER_PW__@127.0.0.1:8554/cam_sub'
+    runOnInitRestart: yes
+  cam_sub:
+
+  # [테스트 패턴] 카메라(PiSP) 없이 스트리밍 스택 실증용. videotestsrc=gst-base 기본.
+  test:
+    runOnInit: 'gst-launch-1.0 videotestsrc is-live=true ! video/x-raw,width=1280,height=720,framerate=25/1 ! videoconvert ! x264enc speed-preset=ultrafast tune=zerolatency bitrate=2000 ! h264parse ! rtspclientsink protocols=tcp location=rtsp://publisher:__PUBLISHER_PW__@127.0.0.1:8554/test'
     runOnInitRestart: yes

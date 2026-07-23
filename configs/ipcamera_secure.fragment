@@ -26,6 +26,7 @@ BR2_PACKAGE_GST1_PLUGINS_GOOD_PLUGIN_RTP=y           # rtph264pay
 BR2_PACKAGE_GST1_PLUGINS_GOOD_PLUGIN_RTPMANAGER=y    # rtpbin/session
 BR2_PACKAGE_GST1_PLUGINS_GOOD_PLUGIN_UDP=y           # udp(RTP 전송)
 BR2_PACKAGE_GST1_RTSP_SERVER=y                       # rtspclientsink
+BR2_PACKAGE_GST1_PLUGINS_BASE_PLUGIN_VIDEOTESTSRC=y  # test 패턴(카메라 없이 스트리밍 실증, Phase A)
 
 # --- 웹UI / 암호 / 네트워크 하드닝 ---
 BR2_PACKAGE_LIGHTTPD=y
