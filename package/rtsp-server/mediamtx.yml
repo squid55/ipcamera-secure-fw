@@ -4,12 +4,12 @@
 logLevel: info
 logDestinations: [stdout]
 
-# --- RTSPS 암호전송 (SFR:1.2.1) ---
+# --- RTSPS 암호전송 (SFR:1.2.1) — mediamtx v1.9.3 키 스키마 ---
 rtsp: yes
-rtspEncryption: strict          # 평문 RTSP 거부, TLS(RTSPS)만 허용
-rtspTransports: [tcp]           # UDP 비활성(전송 보호)
-rtspServerCert: /etc/ssl/rtsp/server.crt   # 프로비저닝이 기기별 발급
-rtspServerKey:  /etc/ssl/rtsp/server.key
+encryption: "strict"            # 평문 RTSP 거부, TLS(RTSPS)만 허용 (RTSPS 포트 8322)
+protocols: [tcp]                # UDP/멀티캐스트 비활성(전송 보호)
+serverCert: /data/tls/server.crt           # 프로비저닝(S20)이 기기별 발급(쓰기가능 파티션)
+serverKey:  /data/tls/server.key
 rtmp: no
 hls: no
 webrtc: no
@@ -19,13 +19,13 @@ srt: no
 authMethod: internal
 authInternalUsers:
   - user: viewer
-    # 비밀번호는 프로비저닝 시 주입(기본값 없음). 여기 자리표시자.
-    pass: __PROVISIONED__
+    # 비밀번호는 프로비저닝(S20) 시 주입 — S65 가 stream.env 로 치환. 기본값 없음.
+    pass: __VIEWER_PW__
     ips: []
     permissions:
       - action: read
   - user: publisher
-    pass: __PROVISIONED__
+    pass: __PUBLISHER_PW__
     permissions:
       - action: publish
 
@@ -33,9 +33,13 @@ authInternalUsers:
 paths:
   cam:
     # RPi5는 HW 인코더 없음 → x264enc(소프트). 2GB 고려 1080p.
+    # 발행은 publisher 계정으로 인증(익명 차단, SFR:1.1.1). __PUBLISHER_PW__ 는 S65가 주입.
+    # 자체서명 루프백 RTSPS 이므로 클라이언트측 인증서 검증은 생략(tls-validation-flags=0).
     runOnInit: >
       gst-launch-1.0 libcamerasrc !
       video/x-raw,width=1920,height=1080,framerate=30/1 !
       videoconvert ! x264enc speed-preset=ultrafast tune=zerolatency bitrate=4000 !
-      rtspclientsink location=rtsps://localhost:8322/cam
+      h264parse ! rtspclientsink
+      location=rtsps://publisher:__PUBLISHER_PW__@localhost:8322/cam
+      tls-validation-flags=0
     runOnInitRestart: yes

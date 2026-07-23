@@ -3,6 +3,9 @@
 > 라즈베리파이 5 + IMX219 기반 **보안 IP카메라 펌웨어** 이미지 빌드 트리입니다.
 > 국정원 **보안기능확인서**(영상정보처리기기 IP카메라 보안요구사항 53항목) 대응을 목표로 합니다.
 
+[![CI](https://github.com/squid55/ipcamera-secure-fw/actions/workflows/ci.yml/badge.svg)](https://github.com/squid55/ipcamera-secure-fw/actions/workflows/ci.yml)
+![license](https://img.shields.io/badge/license-MIT-green)
+![SFR](https://img.shields.io/badge/SFR%20구현-44%2F53-brightgreen)
 ![platform](https://img.shields.io/badge/platform-RaspberryPi%205-c51a4a)
 ![base](https://img.shields.io/badge/base-Buildroot-blue)
 ![sensor](https://img.shields.io/badge/sensor-IMX219-informational)

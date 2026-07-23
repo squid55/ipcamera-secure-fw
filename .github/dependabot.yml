@@ -1,0 +1,10 @@
+version: 2
+# GitHub Actions 워크플로가 쓰는 액션 버전을 주기적으로 최신·보안 패치로 갱신.
+# (C/Buildroot 소스 의존성은 상위 프로젝트 버전 고정으로 관리 → SECURITY.md 참고)
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci"

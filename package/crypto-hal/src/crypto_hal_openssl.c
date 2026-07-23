@@ -42,6 +42,12 @@ ch_rc crypto_hal_key_import(const uint8_t *raw, size_t len, ch_key **out) {
 	*out = k;
 	return CH_OK;
 }
+/* SFR:9.2.1 안전 난수(CSPRNG). 양산 백엔드에선 KCMVP 검증필 DRBG 로 교체 */
+ch_rc crypto_hal_random(uint8_t *out, size_t len) {
+	if (!out || len == 0) return CH_EINVAL;
+	if (RAND_bytes(out, (int)len) != 1) return CH_EBACKEND;
+	return CH_OK;
+}
 /* SFR:9.2.1 키 생성(안전 난수 CSPRNG). 대칭키는 128/256bit */
 ch_rc crypto_hal_key_generate(size_t bits, ch_key **out) {
 	if (bits != 128 && bits != 256) return CH_EINVAL;

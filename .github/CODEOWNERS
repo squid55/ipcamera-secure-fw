@@ -1,0 +1,7 @@
+# 기본 코드 소유자 — PR 시 자동 리뷰 요청
+* @squid55
+
+# 보안 핵심(암호·인증·감사)은 특히 주의해서 리뷰
+/package/crypto-hal/   @squid55
+/package/cctv-secd/    @squid55
+/sfr/                  @squid55

@@ -1,0 +1,107 @@
+#!/bin/sh
+# S20provision — 최초 부팅 프로비저닝 (SD 사이드카 모델)
+#   운영자가 boot 파티션에 넣어 둔 provision.conf 를 소비하여:
+#     · 관리 암호 강제 설정(기본값 미존치)         SFR:3.4.1/3.4.2
+#     · 영상 계정(viewer/publisher) 자격 주입        SFR:1.1.1
+#     · TLS 서버 인증서 마련(자체서명 or 주입)        SFR:1.2.1
+#     · 관리자 통보 대상 기록(전달 채널은 미구현)     SFR:2.2.2 [STUB]
+#   완료 전에는 정상 서비스(RTSPS 등)가 게이트로 차단된다(SFR:1.4.1/3.4.3).
+#   완료 후 provision.conf 를 파기(best-effort)하고 완료 마킹.
+DATA=/data
+DONE="$DATA/.provisioned"
+CRED="$DATA/cred/mgmt.cred"
+STREAM="$DATA/cred/stream.env"
+TLSDIR="$DATA/tls"
+BOOT=/boot
+SRC="$BOOT/provision.conf"
+SECD=/usr/sbin/cctv-secd
+
+log() { echo "provision: $*"; logger -t provision "$*" 2>/dev/null || true; }
+
+shred_file() {   # 플래시에선 완전삭제 보장 불가 → 덮어쓰기+삭제(best-effort)
+	f="$1"; [ -f "$f" ] || return 0
+	shred -u "$f" 2>/dev/null && return 0
+	dd if=/dev/urandom of="$f" bs=1k count=4 conv=notrunc 2>/dev/null || true
+	rm -f "$f"
+}
+
+start() {
+	# 이미 완료면 통과(서비스 게이트 열림)
+	[ -f "$DONE" ] && { log "이미 프로비저닝 완료"; return 0; }
+
+	# boot 파티션 마운트(사이드카 읽기·파기 위해). 보드 특정: RPi5 = mmcblk0p1
+	if ! grep -q " $BOOT " /proc/mounts 2>/dev/null; then
+		mount -t vfat /dev/mmcblk0p1 "$BOOT" 2>/dev/null || true
+	fi
+
+	if [ ! -f "$SRC" ]; then
+		log "provision.conf 없음 — 미프로비저닝 유지(정상 서비스 차단, fail-closed)"
+		return 0
+	fi
+
+	# key=value 파싱(busybox-safe, 화이트리스트 키만)
+	admin_pw=""; viewer_pw="generate"; tls="self-signed"; notify=""
+	while IFS='=' read -r k v; do
+		case "$k" in
+			admin_pw)  admin_pw=$v ;;
+			viewer_pw) viewer_pw=$v ;;
+			tls)       tls=$v ;;
+			notify)    notify=$v ;;
+			''|\#*)    : ;;
+		esac
+	done < "$SRC"
+
+	# 1) 관리 암호 강제 설정(정책 검증은 cctv-secd 내부). 실패 시 미완료로 남김(fail-closed)
+	if [ -z "$admin_pw" ]; then log "admin_pw 누락 — 프로비저닝 중단"; return 1; fi
+	if ! "$SECD" provision-set-mgmt admin "$admin_pw" "$CRED"; then
+		log "관리 암호 설정 실패(정책 위반?) — 프로비저닝 중단"; return 1
+	fi
+	admin_pw=""   # 메모리에서 지움
+
+	# 2) 영상 계정 자격(viewer=요청/생성, publisher=항상 생성)
+	[ "$viewer_pw" = "generate" ] || [ -z "$viewer_pw" ] && viewer_pw=$("$SECD" genpw)
+	publisher_pw=$("$SECD" genpw)
+	umask 077
+	{ printf 'VIEWER_PW=%s\n' "$viewer_pw"; printf 'PUBLISHER_PW=%s\n' "$publisher_pw"; } > "$STREAM"
+
+	# 3) TLS 서버 인증서 (SFR:1.2.1)
+	mkdir -p "$TLSDIR"
+	if [ "$tls" = "self-signed" ]; then
+		if [ ! -f "$TLSDIR/server.crt" ]; then
+			# 유효기간을 길게(-days 36500): 프로비저닝 시점 시계가 epoch(1970)일 수 있어
+			# 짧으면 즉시 만료됨. 근본해결은 RTC/NTP 시각동기(SFR:8.1.3 후속).
+			log "기기 자체서명 인증서 생성"
+			if ! openssl req -x509 -newkey rsa:2048 -sha256 -days 36500 -nodes \
+				-keyout "$TLSDIR/server.key" -out "$TLSDIR/server.crt" \
+				-subj "/CN=ipcam" 2>/tmp/prov_ssl.err; then
+				log "인증서 생성 실패: $(head -1 /tmp/prov_ssl.err 2>/dev/null)"; return 1
+			fi
+			chmod 600 "$TLSDIR/server.key"
+		fi
+	else
+		# 운영자 PKI 주입: boot 파티션의 server.{crt,key} 설치 후 키 파기
+		if [ -f "$BOOT/server.crt" ] && [ -f "$BOOT/server.key" ]; then
+			cp "$BOOT/server.crt" "$TLSDIR/server.crt"
+			cp "$BOOT/server.key" "$TLSDIR/server.key"; chmod 600 "$TLSDIR/server.key"
+			shred_file "$BOOT/server.key"
+		else
+			log "tls=$tls 이나 $BOOT/server.{crt,key} 없음 — 프로비저닝 중단"; return 1
+		fi
+	fi
+
+	# 4) 관리자 통보 대상 기록 (SFR:2.2.2 [STUB] — 전달 채널 미구현)
+	[ -n "$notify" ] && printf '%s\n' "$notify" > "$DATA/notify.addr"
+
+	# 5) 완료 마킹 + factory 플래그 제거 + 사이드카 파기
+	touch "$DONE"
+	rm -f /etc/.factory-state 2>/dev/null || true
+	shred_file "$SRC"
+	log "프로비저닝 완료 — 정상 서비스 개방"
+}
+
+case "$1" in
+	start) start ;;
+	stop)  : ;;
+	restart) : ;;
+	*) echo "Usage: $0 {start|stop|restart}"; exit 1 ;;
+esac

@@ -1,0 +1,49 @@
+name: CI
+
+# PR·push 마다 플랫폼 독립 보안 로직을 자동 검증한다.
+# (하드웨어/Buildroot 전체 빌드 없이 crypto·auth·audit·provision 단위 테스트)
+on:
+  push:
+    branches: [ main, "experiment/**" ]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  host-tests:
+    name: 호스트 보안 로직 테스트
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 의존성 설치 (libssl-dev)
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev
+      - name: 플랫폼 독립 테스트 (crypto·auth·audit·session·mgmt·config·provision)
+        run: ./run-host-tests.sh
+
+  shellcheck:
+    name: 셸 스크립트 정적분석
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck (init·빌드 스크립트, 하드에러만 게이트)
+        run: |
+          shellcheck -S error \
+            run-host-tests.sh \
+            scripts/*.sh \
+            board/rpi5-secure/*.sh \
+            board/rpi5-secure/rootfs-overlay/etc/init.d/S15mountdata \
+            board/rpi5-secure/rootfs-overlay/etc/init.d/S20provision \
+            board/rpi5-secure/rootfs-overlay/etc/init.d/S30nftables \
+            package/rtsp-server/S65rtsp-server
+
+  sfr-coverage:
+    name: SFR 커버리지 리포트 (정보)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: 53항목 구현/스텁/미착수 집계
+        run: node sfr/sync.mjs

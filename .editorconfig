@@ -1,0 +1,23 @@
+# https://editorconfig.org — 에디터 무관 기본 포맷 통일
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# C 소스·Makefile·셸: Buildroot 관례상 탭 들여쓰기
+[*.{c,h,mk}]
+indent_style = tab
+
+[Makefile]
+indent_style = tab
+
+# YAML/JSON/Markdown: 스페이스 2칸
+[*.{yml,yaml,json}]
+indent_style = space
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false

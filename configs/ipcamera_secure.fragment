@@ -16,11 +16,24 @@ BR2_PACKAGE_GST1_PLUGINS_GOOD=y
 BR2_PACKAGE_GST1_PLUGINS_BAD=y
 BR2_PACKAGE_GST1_PLUGINS_UGLY=y
 BR2_PACKAGE_GST1_LIBAV=y
+# H.264 소프트웨어 인코더(RPi5는 HW 인코더 없음) — 카메라 영상 발행에 필요(x264enc 요소)
+BR2_PACKAGE_X264=y
+BR2_PACKAGE_GST1_PLUGINS_UGLY_PLUGIN_X264=y
+# H.264 RTSP 발행 파이프라인용 gst 요소:
+#   libcamerasrc → videoconvert → x264enc → h264parse → rtspclientsink(RTP payload)
+BR2_PACKAGE_GST1_PLUGINS_BAD_PLUGIN_VIDEOPARSERS=y   # h264parse
+BR2_PACKAGE_GST1_PLUGINS_GOOD_PLUGIN_RTP=y           # rtph264pay
+BR2_PACKAGE_GST1_PLUGINS_GOOD_PLUGIN_RTPMANAGER=y    # rtpbin/session
+BR2_PACKAGE_GST1_PLUGINS_GOOD_PLUGIN_UDP=y           # udp(RTP 전송)
+BR2_PACKAGE_GST1_RTSP_SERVER=y                       # rtspclientsink
 
 # --- 웹UI / 암호 / 네트워크 하드닝 ---
 BR2_PACKAGE_LIGHTTPD=y
 BR2_PACKAGE_LIGHTTPD_OPENSSL=y
 BR2_PACKAGE_OPENSSL=y
+# openssl CLI(바이너리) — firstboot 프로비저닝의 자체서명 인증서 생성(S20provision)에 필요.
+# (기본은 라이브러리만 설치되어 `openssl` 명령이 없음 → 인증서 생성 실패)
+BR2_PACKAGE_LIBOPENSSL_BIN=y
 BR2_PACKAGE_NFTABLES=y
 BR2_PACKAGE_CHRONY=y
 BR2_PACKAGE_OPENSSH=y
@@ -41,6 +54,10 @@ BR2_PACKAGE_RTSP_SERVER=y
 
 # --- SFR:5.2.2 커널 모듈 서명/lockdown (커널 config fragment) ---
 BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES="$(BR2_EXTERNAL_IPCAMERA_SECURE_PATH)/board/rpi5-secure/linux.fragment"
+
+# --- 부트 파티션 config.txt: RPi5 D0 스테핑 대응(d0 DTB 강제) + IMX219 카메라 ---
+#   (기본 board/raspberrypi5/config_5.txt 대신 우리 config.txt 를 부트 파티션에 사용)
+BR2_PACKAGE_RPI_FIRMWARE_CONFIG_FILE="$(BR2_EXTERNAL_IPCAMERA_SECURE_PATH)/board/rpi5-secure/rootfs-overlay/boot/config.txt"
 
 # --- rootfs 오버레이(하드닝 설정) + post-build(서비스 제거) ---
 BR2_ROOTFS_OVERLAY="$(BR2_EXTERNAL_IPCAMERA_SECURE_PATH)/board/rpi5-secure/rootfs-overlay"
