@@ -27,7 +27,11 @@ case "$1" in
 		umask 077
 		sed -e "s|__VIEWER_PW__|$VIEWER_PW|" \
 		    -e "s|__PUBLISHER_PW__|$PUBLISHER_PW|" "$TEMPLATE" > "$RUNTIME"
-		printf "Starting rtsp-server: "; $DAEMON "$RUNTIME" & echo "OK" ;;
+		printf "Starting rtsp-server: "
+		# mediamtx 출력을 읽기가능 로그로 캡처(운영/디버깅). 자격증명은 RUNTIME(600)에만 존재.
+		$DAEMON "$RUNTIME" >/var/log/mediamtx.log 2>&1 &
+		chmod 0644 /var/log/mediamtx.log 2>/dev/null
+		echo "OK" ;;
 	stop)   printf "Stopping rtsp-server: "; killall mediamtx 2>/dev/null; rm -f "$RUNTIME"; echo "OK" ;;
 	restart) "$0" stop; "$0" start ;;
 	*) echo "Usage: $0 {start|stop|restart}"; exit 1 ;;

@@ -4,12 +4,12 @@
 logLevel: info
 logDestinations: [stdout]
 
-# --- RTSPS 암호전송 (SFR:1.2.1) ---
+# --- RTSPS 암호전송 (SFR:1.2.1) — mediamtx v1.9.3 키 스키마 ---
 rtsp: yes
-rtspEncryption: strict          # 평문 RTSP 거부, TLS(RTSPS)만 허용
-rtspTransports: [tcp]           # UDP 비활성(전송 보호)
-rtspServerCert: /data/tls/server.crt       # 프로비저닝(S20)이 기기별 발급(쓰기가능 파티션)
-rtspServerKey:  /data/tls/server.key
+encryption: "strict"            # 평문 RTSP 거부, TLS(RTSPS)만 허용 (RTSPS 포트 8322)
+protocols: [tcp]                # UDP/멀티캐스트 비활성(전송 보호)
+serverCert: /data/tls/server.crt           # 프로비저닝(S20)이 기기별 발급(쓰기가능 파티션)
+serverKey:  /data/tls/server.key
 rtmp: no
 hls: no
 webrtc: no
